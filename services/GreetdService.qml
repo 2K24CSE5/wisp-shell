@@ -210,8 +210,6 @@ try:
 
         env_map = {
             "XDG_SESSION_TYPE": "wayland",
-            "XDG_CURRENT_DESKTOP": "niri",
-            "XDG_SESSION_DESKTOP": "niri",
             "USER": target_username,
             "LOGNAME": target_username,
             "PATH": "/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin",

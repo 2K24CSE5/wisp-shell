@@ -176,8 +176,6 @@ input {
     }
 }
 
-spawn-at-startup "quickshell" "-p" "$PROJECT_DIR/greeter.qml"
-
 prefer-no-csd
 screenshot-path null
 
@@ -202,14 +200,26 @@ EOF
         local greetd_config
         greetd_config="$(mktemp)"
         awk '
-            BEGIN { in_default = 0; seen_command = 0; seen_user = 0 }
-            /^\[default_session\]/ { in_default = 1 }
-            /^\[/ && !/^\[default_session\]/ { in_default = 0 }
+            BEGIN { in_default = 0; skip_default = 0; skip_initial = 0; saw_default = 0; seen_command = 0; seen_user = 0 }
+            /^\[initial_session\]/ { in_default = 0; skip_default = 0; skip_initial = 1; next }
+            /^\[default_session\]/ {
+                if (saw_default) {
+                    in_default = 0
+                    skip_default = 1
+                    next
+                }
+                in_default = 1
+                skip_default = 0
+                saw_default = 1
+            }
+            /^\[/ && !/^\[default_session\]/ && !/^\[initial_session\]/ { in_default = 0; skip_default = 0; skip_initial = 0 }
+            skip_initial { next }
+            skip_default { next }
             in_default && /^command[[:space:]]*=/ { print "command = \"/usr/local/bin/wisp-greeter\""; seen_command = 1; next }
             in_default && /^user[[:space:]]*=/ { print "user = \"greeter\""; seen_user = 1; next }
             { print }
             END {
-                if (!in_default) {
+                if (!saw_default) {
                     print ""
                     print "[default_session]"
                 }
