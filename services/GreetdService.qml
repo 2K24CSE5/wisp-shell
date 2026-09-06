@@ -57,9 +57,14 @@ search_dirs.extend([os.path.join(home, "wayland-sessions"), os.path.join(home, "
 sessions = []
 seen = set()
 for directory in search_dirs:
-    if not os.path.isdir(directory):
+    try:
+        if not os.path.isdir(directory):
+            continue
+        filenames = sorted(os.listdir(directory))
+    except (PermissionError, OSError):
         continue
-    for filename in sorted(os.listdir(directory)):
+
+    for filename in filenames:
         if not filename.endswith(".desktop"):
             continue
         path = os.path.join(directory, filename)
@@ -101,6 +106,16 @@ print(json.dumps(sessions))
         }
     }
 
+    Timer {
+        id: sessionLaunchTimer
+        interval: 350
+        repeat: false
+        onTriggered: {
+            Quickshell.execDetached(["pkill", "-u", "greeter", "-9"]);
+            Qt.quit();
+        }
+    }
+
     Process {
         id: authProc
         property string stdoutBuffer: ""
@@ -126,6 +141,7 @@ print(json.dumps(sessions))
 
             if (code === 0) {
                 service.statusMessage = "Authenticated. Launching session...";
+                sessionLaunchTimer.start();
             } else {
                 service.loginFailed = true;
                 service.statusMessage = output || "Authentication failed";
@@ -148,7 +164,6 @@ print(json.dumps(sessions))
 
         const sessionCmd = JSON.stringify(selectedSession.command);
 
-        // Python helper talking JSON directly over GREETD_SOCK
         const pyAuthScript = `
 import os, sys, socket, json, struct
 
@@ -188,21 +203,36 @@ try:
         send_msg(client, {"type": "post_auth_message_response", "response": sys.argv[-3]})
         resp = recv_msg(client)
 
-    # 3. Start user desktop. greetd replaces the session environment with this
-    # list, so provide the variables desktop sessions need to identify Wayland.
+    # 3. Start user desktop with strictly non-empty KEY=VALUE pairs
     if resp and resp.get("type") == "success":
         cmd = json.loads(sys.argv[-2])
-        env = ["XDG_SESSION_TYPE=wayland"]
-        for key in ("XDG_RUNTIME_DIR", "LANG", "LC_ALL", "LC_CTYPE", "PATH"):
-            value = os.environ.get(key)
-            if value:
-                env.append(key + "=" + value)
+        target_username = sys.argv[-4]
+
+        env_map = {
+            "XDG_SESSION_TYPE": "wayland",
+            "XDG_CURRENT_DESKTOP": "niri",
+            "XDG_SESSION_DESKTOP": "niri",
+            "USER": target_username,
+            "LOGNAME": target_username,
+            "PATH": "/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin",
+            "XDG_DATA_DIRS": "/usr/local/share:/usr/share",
+        }
+
+        for key in ("XDG_RUNTIME_DIR", "LANG", "LC_ALL", "LC_CTYPE"):
+            val = os.environ.get(key)
+            if val and 0 < len(val) < 250:
+                env_map[key] = val
+
+        env = [f"{k}={v}" for k, v in env_map.items() if k and v]
+
         send_msg(client, {"type": "start_session", "cmd": cmd, "env": env})
         final_resp = recv_msg(client)
+
         if final_resp and final_resp.get("type") == "success":
+            client.close()
             sys.exit(0)
         else:
-            print(final_resp.get("description", "Failed to start session"))
+            print(final_resp.get("description", "Failed to start session") if final_resp else "No response from greetd")
             sys.exit(1)
     else:
         err = resp.get("description", "Authentication failure") if resp else "Empty daemon response"

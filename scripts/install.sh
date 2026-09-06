@@ -78,6 +78,12 @@ prepare_project() {
     PROJECT_DIR="$HOME/.config/quickshell/wisp-shell"
     if [[ ! -f "$PROJECT_DIR/greeter.qml" ]]; then
         need_command git
+        if [[ -e "$PROJECT_DIR" && ! -d "$PROJECT_DIR" ]]; then
+            fail "Project destination exists and is not a directory: $PROJECT_DIR"
+        fi
+        if [[ -d "$PROJECT_DIR" && -n "$(find "$PROJECT_DIR" -mindepth 1 -maxdepth 1 -print -quit)" ]]; then
+            fail "Project destination exists but is not a Wisp Shell checkout: $PROJECT_DIR"
+        fi
         log "Cloning Wisp Shell into $PROJECT_DIR"
         mkdir -p "$(dirname -- "$PROJECT_DIR")"
         git clone "$REPOSITORY_URL" "$PROJECT_DIR"
@@ -85,6 +91,11 @@ prepare_project() {
 }
 
 install_matugen() {
+    if command -v matugen >/dev/null 2>&1; then
+        return
+    fi
+
+    export PATH="$HOME/.cargo/bin:$PATH"
     if command -v matugen >/dev/null 2>&1; then
         return
     fi
@@ -104,6 +115,7 @@ install_matugen() {
 
     log "Installing Matugen"
     cargo install matugen
+    command -v matugen >/dev/null 2>&1 || fail "Matugen was installed but is not available in PATH"
 }
 
 install_greeter_files() {
@@ -115,13 +127,39 @@ install_greeter_files() {
 #!/usr/bin/env bash
 set -Eeuo pipefail
 unset DISPLAY WAYLAND_DISPLAY WAYLAND_SOCKET
+
 export XDG_RUNTIME_DIR="/tmp/greetd-runtime-\$(id -u)"
 mkdir -p "\$XDG_RUNTIME_DIR"
 chmod 0700 "\$XDG_RUNTIME_DIR"
 export XDG_SESSION_TYPE=wayland
 export QT_QPA_PLATFORM=wayland
 export XDG_DATA_DIRS="/usr/local/share:/usr/share"
-exec niri --config /etc/greetd/niri-greeter.kdl >/dev/null 2>&1
+
+# Dynamically find the greeter file location
+GREETER_PATH=""
+
+# 1. Check shared system locations first
+if [[ -f "/etc/greetd/wisp-shell/greeter.qml" ]]; then
+    GREETER_PATH="/etc/greetd/wisp-shell/greeter.qml"
+elif [[ -f "/usr/share/wisp-shell/greeter.qml" ]]; then
+    GREETER_PATH="/usr/share/wisp-shell/greeter.qml"
+else
+    # 2. Fall back to finding it in the primary user's home directory (UID >= 1000)
+    for home_dir in \$(awk -F: '\$3 >= 1000 && \$3 < 60000 {print \$6}' /etc/passwd); do
+        target="\$home_dir/.config/quickshell/wisp-shell/greeter.qml"
+        if [[ -f "\$target" ]]; then
+            GREETER_PATH="\$target"
+            break
+        fi
+    done
+fi
+
+if [[ -z "\$GREETER_PATH" ]]; then
+    echo "Error: Could not locate greeter.qml" >&2
+    exit 1
+fi
+
+exec niri --config /etc/greetd/niri-greeter.kdl -- quickshell -p "\$GREETER_PATH" >/dev/null 2>&1
 EOF
     chmod 0755 "$launcher"
     run_root rm -f /usr/local/bin/wisp-greeter
