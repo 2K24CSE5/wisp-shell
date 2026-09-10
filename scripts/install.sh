@@ -180,6 +180,7 @@ prefer-no-csd
 screenshot-path null
 
 layout {
+    background-color "#000000"
     focus-ring {
         off
     }

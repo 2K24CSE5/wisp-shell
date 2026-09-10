@@ -51,6 +51,11 @@ Scope {
                                 name: "Niri",
                                 icon: "\uef55",
                                 tab: 1
+                            },
+                            {
+                                name: "Lockscreen",
+                                icon: "\ue897",
+                                tab: 2
                             }
                         ]
                     }
@@ -70,6 +75,10 @@ Scope {
                             }
 
                             SettingsNiri {
+                                Layout.fillWidth: true
+                            }
+
+                            SettingsLockscreen {
                                 Layout.fillWidth: true
                             }
                         }

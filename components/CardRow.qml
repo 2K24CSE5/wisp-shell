@@ -88,9 +88,8 @@ Rectangle {
         Item {
             id: trailingSlot
             visible: children.length > 1 || root.trailingIcon.length > 0
-            implicitWidth: children.length > 1 ? children[1].implicitWidth : (root.trailingIcon.length > 0 ? root.iconSize : 0)
-            implicitHeight: children.length > 1 ? children[1].implicitHeight : (root.trailingIcon.length > 0 ? root.iconSize : 0)
-            Layout.rightMargin: 4
+            implicitWidth: children.length > 1 ? children[1].implicitWidth : (root.trailingIcon.length > 0 ? root.iconSize - 12 : 0)
+            implicitHeight: children.length > 1 ? children[1].implicitHeight : (root.trailingIcon.length > 0 ? root.iconSize - 12: 0)
             Layout.alignment: Qt.AlignVCenter
 
             Text {
