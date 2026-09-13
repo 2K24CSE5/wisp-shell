@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import qs.services
 
 PanelWindow {
     id: topBar
@@ -13,6 +14,7 @@ PanelWindow {
 
     implicitHeight: 42
     color: "transparent"
+    visible: !LockScreenService.isLocked
 
     Item {
         anchors {

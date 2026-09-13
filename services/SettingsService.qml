@@ -11,6 +11,7 @@ Singleton {
 
     property bool isOpen: false
     property int currentTab: 0
+    property bool isPaletteOpen: false
 
     FileDialog {
         id: wallpaperPicker
@@ -32,10 +33,21 @@ Singleton {
 
     function close(): void {
         isOpen = false;
+        isPaletteOpen = false;
     }
 
     function toggle(): void {
         isOpen = !isOpen;
+        if (!isOpen)
+            isPaletteOpen = false;
+    }
+
+    function openPalette(): void {
+        isPaletteOpen = true;
+    }
+
+    function closePalette(): void {
+        isPaletteOpen = false;
     }
 
     function setTab(tabIndex: int): void {
@@ -60,6 +72,12 @@ Singleton {
         }
         function toggle(): void {
             root.toggle();
+        }
+        function openPalette(): void {
+            root.openPalette();
+        }
+        function closePalette(): void {
+            root.closePalette();
         }
         function setTab(tabIndex: int): void {
             root.setTab(tabIndex);

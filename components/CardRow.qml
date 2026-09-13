@@ -10,14 +10,12 @@ Rectangle {
     property string leadingIcon: ""
     property string trailingIcon: ""
     property real subtitleMaxWidth: 320
-
     property real rowHeight: 48
     property real rowRadius: Config.radius
     property real horizontalPadding: 8
     property real iconSize: 20
     property real titleSize: 13
     property real subtitleSize: 11
-
     property bool clickable: false
 
     property color idleColor: "transparent"
@@ -39,6 +37,7 @@ Rectangle {
         anchors.fill: parent
         anchors.leftMargin: root.horizontalPadding
         anchors.rightMargin: root.horizontalPadding
+        spacing: 8
 
         Item {
             id: leadingSlot
@@ -88,9 +87,19 @@ Rectangle {
         Item {
             id: trailingSlot
             visible: children.length > 1 || root.trailingIcon.length > 0
-            implicitWidth: children.length > 1 ? children[1].implicitWidth : (root.trailingIcon.length > 0 ? root.iconSize - 12 : 0)
-            implicitHeight: children.length > 1 ? children[1].implicitHeight : (root.trailingIcon.length > 0 ? root.iconSize - 12: 0)
-            Layout.alignment: Qt.AlignVCenter
+            implicitWidth: {
+                if (children.length > 1) {
+                    return children[1].implicitWidth || children[1].width || 0;
+                }
+                return root.trailingIcon.length > 0 ? root.iconSize : 0;
+            }
+            implicitHeight: {
+                if (children.length > 1) {
+                    return children[1].implicitHeight || children[1].height || 0;
+                }
+                return root.trailingIcon.length > 0 ? root.iconSize : 0;
+            }
+            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
 
             Text {
                 anchors.centerIn: parent

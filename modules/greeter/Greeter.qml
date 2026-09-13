@@ -16,8 +16,8 @@ Scope {
             id: greeterWindow
             required property var modelData
             screen: modelData
-            color: Color.background
 
+            color: Color.background
             anchors {
                 top: true
                 bottom: true
@@ -71,6 +71,7 @@ Scope {
 
             // Center Panel: Clock & Credentials
             ColumnLayout {
+                id: centerPanel
                 z: 1
                 anchors.centerIn: parent
                 width: 320
@@ -168,7 +169,7 @@ Scope {
                         text: GreetdService.statusMessage
                         font.family: Config.textFont
                         font.pixelSize: 12
-                        color: GreetdService.statusMessage.includes("failed") || GreetdService.statusMessage.includes("Error") ? Color.error : Color.muted
+                        color: GreetdService.statusMessage.toLowerCase().includes("failed") || GreetdService.statusMessage.toLowerCase().includes("error") || GreetdService.statusMessage.toLowerCase().includes("failure") ? Color.error : Color.muted
                         Layout.alignment: Qt.AlignHCenter
                         Layout.topMargin: 4
                     }
@@ -214,12 +215,9 @@ Scope {
 
             Connections {
                 target: GreetdService
-
-                function onLoginFailedChanged(): void {
-                    if (GreetdService.loginFailed) {
-                        passInput.text = "";
-                        passInput.forceActiveFocus();
-                    }
+                function onLoginFailed(): void {
+                    passInput.text = "";
+                    passInput.forceActiveFocus();
                 }
             }
         }

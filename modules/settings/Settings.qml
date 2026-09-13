@@ -10,34 +10,31 @@ import qs.components
 Scope {
     id: root
 
+    // Palette window outside of the settings PanelWindow
+    PaletteWindow {}
+
     Variants {
         model: Quickshell.screens
-
         delegate: PanelWindow {
             id: settingsWindow
             required property var modelData
             screen: modelData
-
             visible: SettingsService.isOpen
             color: "transparent"
-
             anchors {
                 top: true
                 bottom: true
                 left: true
                 right: true
             }
-
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
 
             Modal {
                 onClosed: SettingsService.close()
-
                 RowLayout {
                     anchors.fill: parent
                     spacing: 8
-
                     Sidebar {
                         currentTab: SettingsService.currentTab
                         onTabSelected: tab => SettingsService.setTab(tab)
@@ -59,25 +56,20 @@ Scope {
                             }
                         ]
                     }
-
                     ScrollView {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         clip: true
                         contentWidth: availableWidth
-
                         StackLayout {
                             width: parent.width
                             currentIndex: SettingsService.currentTab
-
                             SettingsAppearance {
                                 Layout.fillWidth: true
                             }
-
                             SettingsNiri {
                                 Layout.fillWidth: true
                             }
-
                             SettingsLockscreen {
                                 Layout.fillWidth: true
                             }

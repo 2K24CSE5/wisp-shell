@@ -1,79 +1,265 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
+import Quickshell
 import Quickshell.Widgets
 import Quickshell.Services.SystemTray
 import qs.configs
+import qs.services
 
 Rectangle {
     id: root
 
-    implicitWidth: trayRow.implicitWidth + 20
-    implicitHeight: 34
+    readonly property bool expanded: TrayService.expanded
 
-    visible: SystemTray.items.values.length > 0
+    implicitWidth: expanded ? Math.max(28, contentRow.implicitWidth + 12) : 28
+    implicitHeight: 34
+    visible: TrayService.hasItems
 
     radius: 0
     topLeftRadius: Config.radius
     bottomLeftRadius: Config.radius
     topRightRadius: 4
     bottomRightRadius: 4
-
     color: Color.background
 
+    Behavior on implicitWidth {
+        NumberAnimation {
+            duration: 200
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    // Robust lazy loader that handles the initial instantiation tick safely
+    Loader {
+        id: menuLoader
+        active: false
+        sourceComponent: TrayMenu {}
+
+        property var pendingTarget: null
+        property var pendingItem: null
+        property var pendingOpener: null
+
+        onLoaded: {
+            if (pendingTarget && pendingItem && pendingOpener && item) {
+                item.openFor(pendingTarget, pendingItem, pendingOpener);
+                pendingTarget = null;
+                pendingItem = null;
+                pendingOpener = null;
+            }
+        }
+
+        Connections {
+            target: TrayService
+            function onMenuRequested(targetItem, item, menuOpener) {
+                if (!menuLoader.active) {
+                    menuLoader.pendingTarget = targetItem;
+                    menuLoader.pendingItem = item;
+                    menuLoader.pendingOpener = menuOpener;
+                    menuLoader.active = true;
+                } else if (menuLoader.item) {
+                    menuLoader.item.openFor(targetItem, item, menuOpener);
+                }
+            }
+            function onMenuCloseRequested() {
+                if (menuLoader.item) {
+                    menuLoader.item.visible = false;
+                }
+            }
+        }
+    }
+
     RowLayout {
-        id: trayRow
-        anchors.centerIn: parent
-        spacing: 8
+        id: contentRow
+        anchors {
+            right: parent.right
+            rightMargin: 6
+            verticalCenter: parent.verticalCenter
+        }
+        spacing: 3
 
-        Repeater {
-            model: SystemTray.items.values
+        Item {
+            id: trayDrawer
+            implicitHeight: 22
+            implicitWidth: 0
+            clip: true
 
-            delegate: Item {
-                id: trayItemDelegate
-                required property SystemTrayItem modelData
+            RowLayout {
+                id: trayItemsRow
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 4
+                opacity: 0.0
 
-                implicitWidth: 16
-                implicitHeight: 16
+                Repeater {
+                    model: TrayService.items
 
-                readonly property bool isSymbolic: {
-                    const iconPath = modelData.icon ? modelData.icon.toString().toLowerCase() : "";
-                    return iconPath.includes("-symbolic") || iconPath.includes("symbolic");
-                }
+                    delegate: Rectangle {
+                        id: trayItemDelegate
+                        required property SystemTrayItem modelData
 
-                IconImage {
-                    id: iconImg
-                    anchors.fill: parent
-                    source: modelData.icon
+                        implicitWidth: 20
+                        implicitHeight: 20
+                        radius: 4
+                        color: itemMouse.containsMouse ? Color.surface : "transparent"
 
-                    layer.enabled: trayItemDelegate.isSymbolic
-                    layer.effect: MultiEffect {
-                        brightness: 1.0
-                        colorization: 1.0
-                        colorizationColor: Color.text
-                    }
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-
-                    onClicked: mouse => {
-                        if (mouse.button === Qt.LeftButton) {
-                            modelData.activate();
-                        } else if (mouse.button === Qt.RightButton) {
-                            if (modelData.hasMenu) {
-                                modelData.displayMenu();
-                            } else {
-                                modelData.secondaryActivate();
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 120
                             }
-                        } else if (mouse.button === Qt.MiddleButton) {
-                            modelData.secondaryActivate();
+                        }
+
+                        readonly property bool isSymbolic: TrayService.isSymbolic(modelData.icon)
+
+                        IconImage {
+                            id: iconImg
+                            anchors.centerIn: parent
+                            width: 14
+                            height: 14
+                            source: trayItemDelegate.modelData.icon
+
+                            layer.enabled: trayItemDelegate.isSymbolic
+                            layer.effect: MultiEffect {
+                                brightness: 1.0
+                                colorization: 1.0
+                                colorizationColor: Color.text
+                            }
+                        }
+
+                        MouseArea {
+                            id: itemMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+
+                            onClicked: mouse => {
+                                if (mouse.button === Qt.LeftButton) {
+                                    TrayService.activateItem(trayItemDelegate.modelData);
+                                } else if (mouse.button === Qt.RightButton) {
+                                    // Pass trayItemDelegate so the popup anchors cleanly under this specific icon
+                                    TrayService.openMenuForItem(trayItemDelegate, trayItemDelegate.modelData);
+                                } else if (mouse.button === Qt.MiddleButton) {
+                                    TrayService.secondaryActivateItem(trayItemDelegate.modelData);
+                                }
+                            }
                         }
                     }
                 }
+            }
+
+            states: [
+                State {
+                    name: "expanded"
+                    when: root.expanded
+                    PropertyChanges {
+                        target: trayDrawer
+                        implicitWidth: trayItemsRow.implicitWidth
+                    }
+                    PropertyChanges {
+                        target: trayItemsRow
+                        opacity: 1.0
+                    }
+                },
+                State {
+                    name: "collapsed"
+                    when: !root.expanded
+                    PropertyChanges {
+                        target: trayDrawer
+                        implicitWidth: 0
+                    }
+                    PropertyChanges {
+                        target: trayItemsRow
+                        opacity: 0.0
+                    }
+                }
+            ]
+
+            transitions: [
+                Transition {
+                    from: "collapsed"
+                    to: "expanded"
+                    SequentialAnimation {
+                        NumberAnimation {
+                            target: trayDrawer
+                            property: "implicitWidth"
+                            duration: 200
+                            easing.type: Easing.OutCubic
+                        }
+                        NumberAnimation {
+                            target: trayItemsRow
+                            property: "opacity"
+                            duration: 100
+                            easing.type: Easing.Linear
+                        }
+                    }
+                },
+                Transition {
+                    from: "expanded"
+                    to: "collapsed"
+                    SequentialAnimation {
+                        NumberAnimation {
+                            target: trayItemsRow
+                            property: "opacity"
+                            duration: 50
+                            easing.type: Easing.Linear
+                        }
+                        NumberAnimation {
+                            target: trayDrawer
+                            property: "implicitWidth"
+                            duration: 180
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                }
+            ]
+        }
+
+        Rectangle {
+            visible: root.expanded
+            implicitWidth: 1
+            implicitHeight: 10
+            color: Color.overlay
+            opacity: root.expanded ? 0.7 : 0.0
+            Layout.alignment: Qt.AlignVCenter
+            Layout.rightMargin: 1
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 140
+                }
+            }
+        }
+
+        Item {
+            id: toggleBtn
+            implicitWidth: 16
+            implicitHeight: 20
+            Layout.alignment: Qt.AlignVCenter
+
+            Text {
+                id: triggerIcon
+                anchors.centerIn: parent
+                text: root.expanded ? "close" : "chevron_left"
+                font.family: Config.iconFont
+                font.pixelSize: root.expanded ? 14 : 18
+                color: root.expanded ? Color.primary : (toggleMouse.containsMouse ? Color.text : Color.muted)
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignHCenter
+
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 140
+                    }
+                }
+            }
+
+            MouseArea {
+                id: toggleMouse
+                anchors.fill: parent
+                anchors.margins: -4
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: TrayService.toggleExpanded()
             }
         }
     }

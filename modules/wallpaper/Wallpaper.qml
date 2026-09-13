@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.services
 import qs.configs
+import qs.components
 
 Scope {
     id: root
@@ -29,15 +30,10 @@ Scope {
                 exclusionMode: ExclusionMode.Ignore
                 color: Color.background
 
-                Image {
-                    id: sourceImage
-                    anchors.fill: parent
-                    visible: WallpaperService.hasWallpaper
+                CrossfadeImage {
                     source: WallpaperService.imageSource
                     fillMode: Image.PreserveAspectCrop
-                    asynchronous: true
-                    cache: true
-                    smooth: true
+                    transitionDuration: 350
                 }
             }
         }

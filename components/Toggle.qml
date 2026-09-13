@@ -6,13 +6,17 @@ Item {
 
     property bool checked: false
     property bool enabled: true
-    property string leftText: ""
-    property string rightText: ""
+    property string leftText: "Off"
+    property string rightText: "On"
     property int padding: 3
+    property int labelPadding: 10
 
     signal toggled(bool checked)
 
-    implicitWidth: 140
+    readonly property real leftSegmentWidth: Math.round(leftLabel.implicitWidth + (root.labelPadding * 2))
+    readonly property real rightSegmentWidth: Math.round(rightLabel.implicitWidth + (root.labelPadding * 2))
+
+    implicitWidth: root.leftSegmentWidth + root.rightSegmentWidth + (root.padding * 2)
     implicitHeight: 36
     opacity: enabled ? 1.0 : 0.5
 
@@ -28,20 +32,26 @@ Item {
         radius: Config.radius
         color: Color.overlay
 
+        // Sliding thumb adapting to each option's dynamic width
         Rectangle {
             id: thumb
-            readonly property real segmentWidth: (track.width - (root.padding * 2)) / 2
-
-            width: segmentWidth
+            width: root.checked ? root.rightSegmentWidth : root.leftSegmentWidth
             height: track.height - (root.padding * 2)
             radius: Math.max(2, (Config.radius ?? 8) - 2)
             anchors.verticalCenter: parent.verticalCenter
-            x: root.padding + (root.checked ? segmentWidth : 0)
+            x: root.padding + (root.checked ? root.leftSegmentWidth : 0)
             color: Color.primary
-            scale: wholeTrackArea.pressed ? 0.95 : 1.0
+            scale: (leftArea.pressed || rightArea.pressed) ? 0.95 : 1.0
             transformOrigin: Item.Center
 
             Behavior on x {
+                NumberAnimation {
+                    duration: 240
+                    easing.type: Easing.OutQuint
+                }
+            }
+
+            Behavior on width {
                 NumberAnimation {
                     duration: 220
                     easing.type: Easing.OutQuint
@@ -67,7 +77,8 @@ Item {
             anchors.margins: root.padding
 
             Item {
-                width: parent.width / 2
+                id: leftSegment
+                width: root.leftSegmentWidth
                 height: parent.height
 
                 Text {
@@ -77,7 +88,7 @@ Item {
                     font.family: Config.textFont
                     font.pixelSize: 12
                     font.weight: !root.checked ? Font.DemiBold : Font.Normal
-                    color: !root.checked ? Color.background : Color.muted
+                    color: !root.checked ? Color.background : (leftArea.containsMouse ? Color.text : Color.muted)
 
                     Behavior on color {
                         ColorAnimation {
@@ -85,10 +96,20 @@ Item {
                         }
                     }
                 }
+
+                MouseArea {
+                    id: leftArea
+                    anchors.fill: parent
+                    hoverEnabled: root.enabled
+                    enabled: root.enabled
+                    cursorShape: root.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: root.toggled(false)
+                }
             }
 
             Item {
-                width: parent.width / 2
+                id: rightSegment
+                width: root.rightSegmentWidth
                 height: parent.height
 
                 Text {
@@ -98,7 +119,7 @@ Item {
                     font.family: Config.textFont
                     font.pixelSize: 12
                     font.weight: root.checked ? Font.DemiBold : Font.Normal
-                    color: root.checked ? Color.background : Color.muted
+                    color: root.checked ? Color.background : (rightArea.containsMouse ? Color.text : Color.muted)
 
                     Behavior on color {
                         ColorAnimation {
@@ -106,24 +127,14 @@ Item {
                         }
                     }
                 }
-            }
-        }
 
-        MouseArea {
-            id: wholeTrackArea
-            anchors.fill: parent
-            hoverEnabled: root.enabled
-            enabled: root.enabled
-            cursorShape: root.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-
-            onClicked: mouse => {
-                // If clicked on left half: Light (checked = false)
-                // If clicked on right half: Dark (checked = true)
-                const isRightSide = mouse.x >= (width / 2);
-                if (root.checked !== isRightSide) {
-                    root.toggled(isRightSide);
-                } else {
-                    root.toggled(!root.checked);
+                MouseArea {
+                    id: rightArea
+                    anchors.fill: parent
+                    hoverEnabled: root.enabled
+                    enabled: root.enabled
+                    cursorShape: root.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: root.toggled(true)
                 }
             }
         }

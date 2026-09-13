@@ -7,7 +7,6 @@ import qs.services
 
 ColumnLayout {
     id: root
-
     Layout.fillWidth: true
     spacing: 16
 
@@ -59,7 +58,6 @@ ColumnLayout {
                 color: "black"
                 antialiasing: true
                 smooth: true
-
                 layer.enabled: true
                 layer.smooth: true
                 layer.effect: null
@@ -84,6 +82,52 @@ ColumnLayout {
             title: "Wallpaper"
             subtitle: WallpaperService.hasWallpaper ? WallpaperService.currentWallpaper.replace(/^file:\/\//, "") : "No wallpaper selected"
             onClicked: SettingsService.openWallpaperPicker()
+        }
+    }
+
+    Card {
+        Layout.fillWidth: true
+        title: "Style"
+        iconText: "\ue40a"
+
+        CardRow {
+            Layout.fillWidth: true
+            leadingIcon: "\ue51c"
+            title: "Theme mode"
+            subtitle: "Choose between light and dark themes"
+            Toggle {
+                checked: Color.isDark
+                leftText: "Light"
+                rightText: "Dark"
+                onToggled: checked => Color.setDark(checked)
+            }
+        }
+
+        CardRow {
+            Layout.fillWidth: true
+            leadingIcon: "\ue40a"
+            title: "Color palette"
+            subtitle: Color.isDynamicPalette ? "Dynamic colors generated from wallpaper" : (Color.activePreset === "custom" ? "Custom color scheme" : "Preset: " + (Color.presets.find(p => p.id === Color.activePreset)?.name ?? "Built-in"))
+
+            Toggle {
+                // Left = Dynamic (checked: false), Right = Palettes (checked: true)
+                checked: !Color.isDynamicPalette
+                leftText: "Dynamic"
+                rightText: "Palettes"
+                onToggled: checked => {
+                    if (!checked) {
+                        // User explicitly clicked Dynamic: switch back and regenerate
+                        Color.setDynamic(true);
+                        SettingsService.closePalette();
+                        if (WallpaperService.hasWallpaper) {
+                            MatugenService.generateColors(WallpaperService.currentWallpaper);
+                        }
+                    } else {
+                        // User clicked Palettes: open picker, but do NOT disable dynamic yet
+                        SettingsService.openPalette();
+                    }
+                }
+            }
         }
     }
 

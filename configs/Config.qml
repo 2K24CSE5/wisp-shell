@@ -19,6 +19,8 @@ Singleton {
             textFont: "Inter",
             idleLockTimeout: 0,
             fadeDuration: 1000,
+            lockOnLidClose: false,
+            fadeToMonitorOff: true,
             selectedSession: ""
         })
 
@@ -28,11 +30,13 @@ Singleton {
     readonly property string textFont: settings.textFont
     readonly property int idleLockTimeout: Math.max(0, Number(settings.idleLockTimeout) || 0)
     readonly property int fadeDuration: Math.max(300, Number(settings.fadeDuration) || 1000)
+    readonly property bool lockOnLidClose: settings.lockOnLidClose === true
+    readonly property bool fadeToMonitorOff: settings.fadeToMonitorOff !== false
     readonly property string selectedSession: settings.selectedSession || ""
 
     Process {
         id: initProcess
-        command: ["sh", "-c", "mkdir -p '" + config.configDir + "' && " + "if [ ! -f '" + config.configPath + "' ]; then " + "  echo '{\"wallpaper\": \"\", \"radius\": 12, \"iconFont\": \"Material Symbols Rounded\", \"textFont\": \"Inter\", \"idleLockTimeout\": 0, \"fadeDuration\": 1000, \"selectedSession\": \"\"}' > '" + config.configPath + "'; " + "fi"]
+        command: ["sh", "-c", "mkdir -p '" + config.configDir + "' && " + "if [ ! -f '" + config.configPath + "' ]; then " + "  echo '{\"wallpaper\": \"\", \"radius\": 12, \"iconFont\": \"Material Symbols Rounded\", \"textFont\": \"Inter\", \"idleLockTimeout\": 0, \"fadeDuration\": 1000, \"lockOnLidClose\": false, \"selectedSession\": \"\"}' > '" + config.configPath + "'; " + "fi"]
         running: true
         onExited: exitCode => {
             if (exitCode === 0) {
@@ -132,6 +136,20 @@ Singleton {
         save();
     }
 
+    function setLockOnLidClose(enabled: bool): void {
+        const updated = Object.assign({}, settings);
+        updated.lockOnLidClose = enabled;
+        settings = updated;
+        save();
+    }
+
+    function setFadeToMonitorOff(enabled: bool): void {
+        const updated = Object.assign({}, settings);
+        updated.fadeToMonitorOff = enabled;
+        settings = updated;
+        save();
+    }
+
     function setSelectedSession(sessionName: string): void {
         const updated = Object.assign({}, settings);
         updated.selectedSession = sessionName;
@@ -160,6 +178,12 @@ Singleton {
         }
         function setFadeDuration(val: int): void {
             config.setFadeDuration(val);
+        }
+        function setLockOnLidClose(val: bool): void {
+            config.setLockOnLidClose(val);
+        }
+        function setFadeToMonitorOff(val: bool): void {
+            config.setFadeToMonitorOff(val);
         }
     }
 }

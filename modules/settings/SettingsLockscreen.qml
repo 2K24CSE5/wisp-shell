@@ -11,8 +11,36 @@ ColumnLayout {
 
     Card {
         Layout.fillWidth: true
-        title: "Lock screen"
+        title: "Idle Settings"
         iconText: "\ue897"
+
+        CardRow {
+            Layout.fillWidth: true
+            leadingIcon: "\ue42b"
+            title: "Fade to monitor off"
+            subtitle: "Turn off monitors after the lock fade completes"
+
+            Toggle {
+                checked: Config.fadeToMonitorOff
+                leftText: "Off"
+                rightText: "On"
+                onToggled: checked => Config.setFadeToMonitorOff(checked)
+            }
+        }
+
+        CardRow {
+            Layout.fillWidth: true
+            leadingIcon: "\ue323"
+            title: "Lock on lid close"
+            subtitle: "Lock the session when the laptop lid is closed"
+
+            Toggle {
+                checked: Config.lockOnLidClose
+                leftText: "Off"
+                rightText: "On"
+                onToggled: checked => Config.setLockOnLidClose(checked)
+            }
+        }
 
         CardRow {
             Layout.fillWidth: true
@@ -56,30 +84,30 @@ ColumnLayout {
         CardRow {
             Layout.fillWidth: true
             leadingIcon: "\ue3e7"
-            title: "Fade out speed"
+            title: "Lock fade grace period"
             subtitle: "Duration to smoothly darken the screen before locking"
 
             Selector {
                 options: [
                     {
-                        label: "Fast (500ms)",
-                        ms: 500
-                    },
-                    {
-                        label: "Normal (1s)",
+                        label: "1 second",
                         ms: 1000
                     },
                     {
-                        label: "Smooth (1.5s)",
-                        ms: 1500
-                    },
-                    {
-                        label: "Slow (2s)",
+                        label: "2 seconds",
                         ms: 2000
                     },
                     {
-                        label: "Cinema (3s)",
+                        label: "3 seconds",
                         ms: 3000
+                    },
+                    {
+                        label: "4 seconds",
+                        ms: 4000
+                    },
+                    {
+                        label: "5 seconds",
+                        ms: 5000
                     }
                 ]
                 valueRole: "ms"
@@ -87,6 +115,7 @@ ColumnLayout {
                 onSelected: value => SettingsService.setFadeDuration(value)
             }
         }
+
     }
 
     Item {

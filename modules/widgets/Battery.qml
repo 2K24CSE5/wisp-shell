@@ -6,8 +6,7 @@ import qs.services
 
 Rectangle {
     id: root
-
-    implicitWidth: batContent.implicitWidth + 24
+    implicitWidth: mainRow.implicitWidth + 20
     implicitHeight: 34
 
     readonly property bool hasLeftNeighbor: SystemTray.items.values.length > 0
@@ -31,66 +30,73 @@ Rectangle {
         }
     }
 
-    color: mouseArea.containsMouse ? Color.surface : Color.background
-    visible: BatteryService.hasBattery
-
+    color: (mouseArea.containsMouse || batteryMenu.visible) ? Color.surface : Color.background
     Behavior on color {
         ColorAnimation {
             duration: 150
         }
     }
 
+    visible: BatteryService.hasBattery
+
     readonly property color accentColor: {
-        if (BatteryService.percentage <= 20 && !BatteryService.isCharging) {
-            return Color.error ?? "#e06c75";
-        }
+        if (BatteryService.isCharging)
+            return Color.primary;
+        if (BatteryService.percentage <= 20)
+            return Color.error ?? "#eb6f92";
+        if (BatteryService.percentage <= 35)
+            return Color.warning ?? "#f6c177";
         return Color.primary;
     }
 
-    ColumnLayout {
-        id: batContent
+    RowLayout {
+        id: mainRow
         anchors.centerIn: parent
-        spacing: 0
+        spacing: 6
 
-        Text {
-            text: BatteryService.percentage + "%"
-            font.family: Config.textFont
-            font.pixelSize: 11
-            font.bold: true
-            color: Color.text
-            Layout.alignment: Qt.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-        }
+        ColumnLayout {
+            spacing: -2
+            Layout.alignment: Qt.AlignVCenter
 
-        Rectangle {
-            Layout.alignment: Qt.AlignHCenter
-            implicitWidth: 26
-            implicitHeight: 2
-            radius: 1
-            color: Color.overlay
+            RowLayout {
+                spacing: 2
+                Layout.alignment: Qt.AlignRight
 
-            Rectangle {
-                anchors.left: parent.left
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                width: parent.width * Math.min(1.0, Math.max(0.0, BatteryService.percentage / 100))
-                radius: 1
-                color: root.accentColor
-
-                Behavior on width {
-                    NumberAnimation {
-                        duration: 250
-                        easing.type: Easing.OutCubic
-                    }
+                Text {
+                    visible: BatteryService.isCharging
+                    text: "\ue3e7" // Material lightning icon
+                    font.family: Config.iconFont
+                    font.pixelSize: 10
+                    color: root.accentColor
+                    verticalAlignment: Text.AlignVCenter
+                    Layout.alignment: Qt.AlignVCenter
                 }
-
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 150
-                    }
+                Text {
+                    text: BatteryService.isCharging ? "PWR" : "BAT"
+                    font.family: Config.textFont
+                    font.pixelSize: 8
+                    font.bold: true
+                    color: root.accentColor
+                    lineHeight: 1.0
+                    verticalAlignment: Text.AlignVCenter
+                    Layout.alignment: Qt.AlignVCenter
                 }
             }
+
+            Text {
+                text: BatteryService.percentage + "%"
+                font.family: Config.textFont
+                font.pixelSize: 11
+                font.bold: true
+                color: Color.text
+                lineHeight: 1.0
+                Layout.alignment: Qt.AlignRight
+            }
         }
+    }
+
+    BatteryMenu {
+        id: batteryMenu
     }
 
     MouseArea {
@@ -98,5 +104,6 @@ Rectangle {
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
+        onClicked: batteryMenu.toggle(root)
     }
 }
