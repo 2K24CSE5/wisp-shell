@@ -15,20 +15,24 @@ Run the installer as your normal user. It uses `sudo` for system changes:
 curl -fsSL https://raw.githubusercontent.com/physteorts/wisp-shell/main/scripts/install.sh | bash
 ```
 
-When run from GitHub, the installer clones the project into `~/.config/quickshell/wisp-shell`.
+The installer clones the project from git into `~/.config/quickshell/wisp-shell`.
 
 The installer supports Fedora, Arch Linux, and Debian-based systems. It installs the required tools:
 
 - Quickshell
+- Ghostty
 - greetd and Niri
-- Python 3
+- Python 3 and nautilus-python
 - Matugen
 - polkit and GLib utilities
 - ACL and fontconfig support
+- Google Material Symbols Rounded and Inter fonts
 
 It also:
 
 - Installs `/usr/local/bin/wisp-greeter`
 - Configures greetd and the Niri greeter session
 - Locates `greeter.qml` from the installed project or shared system paths
+- Configures Niri compositor integration via `wisp-shell.kdl` (`include "wisp-shell.kdl"`)
+- Links dynamic Ghostty Matugen theme configuration
 - Grants the `greeter` user access to the shell source and `~/.config/wisp-shell`

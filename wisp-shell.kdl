@@ -1,0 +1,56 @@
+// ==============================================================================
+//  Wisp Shell — Niri Compositor Configuration
+//  https://github.com/physteorts/wisp-shell
+// ==============================================================================
+
+// ------------------------------------------------------------------------------
+// Startup Applications
+// ------------------------------------------------------------------------------
+// Launch Wisp Shell (Quickshell desktop environment)
+spawn-sh-at-startup "quickshell -p ~/.config/quickshell/wisp-shell"
+
+// ------------------------------------------------------------------------------
+// Compositor Behavior & Decorations
+// ------------------------------------------------------------------------------
+// Request clients to omit client-side decorations (CSD) where supported
+prefer-no-csd
+
+// ------------------------------------------------------------------------------
+// Layer Shell Rules
+// ------------------------------------------------------------------------------
+// Render desktop wallpaper within the Overview backdrop
+layer-rule {
+    match namespace="^quickshell-wallpaper$"
+    place-within-backdrop true
+}
+
+// Protect lockscreen UI & credentials from screenshots and screencasts
+layer-rule {
+    match namespace="^wisp-lockscreen$"
+    block-out-from "screen-capture"
+}
+
+// ------------------------------------------------------------------------------
+// Keybindings
+// ------------------------------------------------------------------------------
+binds {
+    // Lock the session using Wisp Shell's PAM lockscreen
+    Super+Alt+L hotkey-overlay-title="Lock the Screen (Wisp Shell)" {
+        spawn-sh "quickshell ipc call lockscreen lock"
+    }
+
+    // Toggle Wisp Shell settings panel
+    Mod+Shift+S hotkey-overlay-title="Toggle Wisp Shell Settings" {
+        spawn-sh "quickshell ipc call settings toggle"
+    }
+
+    // Toggle system tray expansion drawer
+    Mod+Shift+T hotkey-overlay-title="Toggle System Tray Drawer" {
+        spawn-sh "quickshell ipc call tray toggle"
+    }
+
+    // Default terminal: Ghostty with dynamic Matugen theming
+    Mod+T hotkey-overlay-title="Open a Terminal: ghostty" {
+        spawn "ghostty"
+    }
+}
