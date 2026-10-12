@@ -105,7 +105,8 @@ print(json.dumps(sessions))
         interval: 350
         repeat: false
         onTriggered: {
-            Quickshell.execDetached(["pkill", "-u", "greeter", "-9"]);
+            const greeterUser = Quickshell.env("USER") || "greeter";
+            Quickshell.execDetached(["pkill", "-u", greeterUser, "-9"]);
             Qt.quit();
         }
     }

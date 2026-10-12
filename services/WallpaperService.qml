@@ -19,6 +19,31 @@ Singleton {
     property string pendingWallpaper: ""
     property string copyingWallpaper: ""
 
+    Component.onCompleted: {
+        if (Config.loaded && Config.wallpaper === "") {
+            restoreProcess.running = true;
+        }
+    }
+
+    Process {
+        id: restoreProcess
+        command: ["test", "-f", service.cleanFilePath(service.wallpaperPath)]
+
+        onExited: exitCode => {
+            if (exitCode === 0 && Config.wallpaper === "") {
+                const restoredPath = service.formatPath(service.wallpaperPath);
+                service.currentWallpaper = restoredPath;
+                service.revision++;
+                Config.setWallpaper(restoredPath);
+            }
+        }
+    }
+
+    Process {
+        id: clearProcess
+        command: ["rm", "-f", service.cleanFilePath(service.wallpaperPath)]
+    }
+
     Process {
         id: copyProcess
 
@@ -64,6 +89,12 @@ Singleton {
         function onTargetHomeChanged(): void {
             service.copyWallpaper(Config.wallpaper);
         }
+
+        function onLoadedChanged(): void {
+            if (Config.loaded && Config.wallpaper === "") {
+                restoreProcess.running = true;
+            }
+        }
     }
 
     function cleanFilePath(path: string): string {
@@ -89,6 +120,9 @@ Singleton {
     }
 
     function copyWallpaper(path: string): void {
+        if (!path || !Config.targetHome || Config.targetHome.startsWith("/var/lib") || Config.targetHome === "/root")
+            return;
+
         const formatted = formatPath(path);
         if (!formatted || !formatted.startsWith("file://")) {
             currentWallpaper = formatted;
@@ -125,6 +159,7 @@ Singleton {
         if (typeof Config.setWallpaper === "function") {
             Config.setWallpaper("");
         }
+        clearProcess.running = true;
     }
 
     property IpcHandler wallpaperIpc: IpcHandler {

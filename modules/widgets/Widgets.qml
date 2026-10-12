@@ -63,6 +63,7 @@ PanelWindow {
 
             QuickMenu {}
             Battery {}
+            Mirror {}
             Tray {}
 
             Item {

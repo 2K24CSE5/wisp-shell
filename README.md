@@ -17,13 +17,14 @@ curl -fsSL https://raw.githubusercontent.com/physteorts/wisp-shell/main/scripts/
 
 The installer clones the project from git into `~/.config/quickshell/wisp-shell`.
 
-The installer supports Fedora, Arch Linux, and Debian-based systems. It installs the required tools:
+The installer supports Fedora. It installs the required tools:
 
 - Quickshell
 - Ghostty
 - greetd and Niri
 - Python 3 and nautilus-python
 - Matugen
+- wl-mirror
 - polkit and GLib utilities
 - ACL and fontconfig support
 - Google Material Symbols Rounded and Inter fonts

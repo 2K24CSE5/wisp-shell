@@ -9,7 +9,7 @@ Rectangle {
     implicitWidth: mainRow.implicitWidth + 20
     implicitHeight: 34
 
-    readonly property bool hasLeftNeighbor: SystemTray.items.values.length > 0
+    readonly property bool hasLeftNeighbor: true
 
     radius: 0
     topRightRadius: 4

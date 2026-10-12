@@ -62,6 +62,10 @@ Singleton {
         Config.setFadeDuration(ms);
     }
 
+    function setOpenMaximized(enabled: bool): void {
+        Config.setOpenMaximized(enabled);
+    }
+
     property IpcHandler settingsIpc: IpcHandler {
         target: "settings"
         function open(): void {
@@ -87,6 +91,9 @@ Singleton {
         }
         function setFadeDuration(ms: int): void {
             root.setFadeDuration(ms);
+        }
+        function setOpenMaximized(enabled: bool): void {
+            root.setOpenMaximized(enabled);
         }
         function isOpen(): bool {
             return root.isOpen;

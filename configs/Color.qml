@@ -178,16 +178,36 @@ Singleton {
     readonly property color info: getColor("info")
     readonly property color error: getColor("error")
 
-    Process {
-        id: initProcess
-        command: ["sh", "-c", "mkdir -p '" + root.configDir + "' && " + "if [ ! -f '" + root.configPath + "' ]; then " + "  cat << 'EOF' > '" + root.configPath + "'\n" + JSON.stringify({
+    function ensureConfig(): void {
+        if (!Config.targetHome || Config.targetHome.startsWith("/var/lib") || Config.targetHome === "/root")
+            return;
+        initProcess.command = ["sh", "-c", "mkdir -p '" + root.configDir + "' && " + "if [ ! -f '" + root.configPath + "' ]; then " + "  cat << 'EOF' > '" + root.configPath + "'\n" + JSON.stringify({
                 isDark: root.isDark,
                 isDynamicPalette: root.isDynamicPalette,
                 activePreset: root.activePreset,
                 dark: root.darkPalette,
                 light: root.lightPalette
-            }, null, 2) + "\nEOF\n" + "fi"]
-        running: true
+            }, null, 2) + "\nEOF\n" + "fi && chmod 0666 '" + root.configPath + "'"];
+        initProcess.running = true;
+    }
+
+    Connections {
+        target: Config
+        function onTargetHomeChanged(): void {
+            root.ensureConfig();
+        }
+        function onLoadedChanged(): void {
+            root.ensureConfig();
+        }
+    }
+
+    Component.onCompleted: {
+        root.ensureConfig();
+    }
+
+    Process {
+        id: initProcess
+        running: false
         onExited: exitCode => {
             if (exitCode === 0) {
                 fileView.reload();
@@ -298,6 +318,8 @@ Singleton {
     }
 
     function save() {
+        if (!Config.targetHome || Config.targetHome.startsWith("/var/lib") || Config.targetHome === "/root")
+            return;
         const payload = {
             isDark: root.isDark,
             isDynamicPalette: root.isDynamicPalette,

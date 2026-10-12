@@ -17,7 +17,7 @@ Item {
     property bool drawerExpanded: false
     property bool isWifiView: true
 
-    readonly property bool hasLeftNeighbor: BatteryService.hasBattery || SystemTray.items.values.length > 0
+    readonly property bool hasLeftNeighbor: true
 
     Connections {
         target: LockScreenService

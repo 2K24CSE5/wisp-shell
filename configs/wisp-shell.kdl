@@ -1,0 +1,68 @@
+// ==============================================================================
+//  Wisp Shell — Niri Compositor Configuration
+//  https://github.com/physteorts/wisp-shell
+// ==============================================================================
+
+spawn-sh-at-startup "quickshell -p ~/.config/quickshell/wisp-shell"
+prefer-no-csd
+
+hotkey-overlay {
+    skip-at-startup
+}
+
+layout {
+    background-color "transparent"
+
+    focus-ring {
+        active-color "#c7cc79"
+        inactive-color "#47473b"
+    }
+
+    border {
+        active-color "#c7cc79"
+        inactive-color "#47473b"
+    }
+}
+
+layer-rule {
+    match namespace="^quickshell-wallpaper$"
+    place-within-backdrop true
+}
+
+layer-rule {
+    match namespace="^wisp-lockscreen$"
+    block-out-from "screen-capture"
+}
+
+overview {
+    workspace-shadow {
+        off
+    }
+}
+
+recent-windows {
+    highlight {
+        active-color "#c7cc79"
+        urgent-color "#ffb4ab"
+        corner-radius 12
+    }
+}
+
+window-rule {
+    geometry-corner-radius 12
+    clip-to-geometry true
+}
+
+window-rule {
+    open-maximized true
+}
+
+binds {
+    Mod+S hotkey-overlay-title="Toggle Wisp Shell Settings" {
+        spawn-sh "quickshell -c wisp-shell ipc call settings toggle"
+    }
+
+    Mod+T hotkey-overlay-title="Open a Terminal: ghostty" {
+        spawn "ghostty"
+    }
+}

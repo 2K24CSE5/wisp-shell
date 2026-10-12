@@ -19,6 +19,7 @@ Item {
         cache: true
         smooth: true
         visible: root.hasValidSource && currentBg.status === Image.Ready
+        source: root.source
     }
 
     // Top transition layer (fades in incoming texture)
