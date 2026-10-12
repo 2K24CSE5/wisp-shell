@@ -268,6 +268,7 @@ install_packages() {
         ghostty
         wl-mirror
         adw-gtk3-theme
+        flatpak
     )
 
     local -a missing=()
@@ -377,6 +378,79 @@ setup_project_files() {
     echo
 }
 
+setup_gtk_and_flatpak_theming() {
+    local gtk3_dir="$HOME/.config/gtk-3.0"
+    local gtk4_dir="$HOME/.config/gtk-4.0"
+    local user_themes_dir="$HOME/.local/share/themes"
+    local legacy_themes_dir="$HOME/.themes"
+
+    mkdir -p "$gtk3_dir" "$gtk4_dir" "$user_themes_dir" "$legacy_themes_dir"
+
+    if [[ ! -f "$gtk3_dir/settings.ini" ]]; then
+        cat <<'EOF' > "$gtk3_dir/settings.ini"
+[Settings]
+gtk-theme-name = adw-gtk3-dark
+gtk-application-prefer-dark-theme = 1
+EOF
+        log_ok "Configured GTK 3 settings: $gtk3_dir/settings.ini"
+    fi
+
+    if [[ ! -f "$gtk4_dir/settings.ini" ]]; then
+        cat <<'EOF' > "$gtk4_dir/settings.ini"
+[Settings]
+gtk-application-prefer-dark-theme = 1
+EOF
+        log_ok "Configured GTK 4 settings: $gtk4_dir/settings.ini"
+    fi
+
+    touch "$gtk3_dir/gtk.css" "$gtk4_dir/gtk.css" 2>/dev/null || true
+
+    if command -v gsettings >/dev/null 2>&1; then
+        gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 2>/dev/null || true
+        gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
+        log_ok "Configured GNOME desktop interface settings (adw-gtk3-dark, prefer-dark)"
+    fi
+
+    for theme in adw-gtk3 adw-gtk3-dark; do
+        if [[ -d "/usr/share/themes/$theme" ]]; then
+            if [[ ! -d "$user_themes_dir/$theme" ]]; then
+                cp -r "/usr/share/themes/$theme" "$user_themes_dir/" 2>/dev/null || true
+            fi
+            if [[ ! -d "$legacy_themes_dir/$theme" ]]; then
+                cp -r "/usr/share/themes/$theme" "$legacy_themes_dir/" 2>/dev/null || true
+            fi
+        fi
+    done
+
+    if command -v flatpak >/dev/null 2>&1; then
+        log_action "Configuring Flatpak sandbox overrides for GTK dynamic colors..."
+        flatpak override --user \
+            --filesystem=xdg-config/gtk-3.0:ro \
+            --filesystem=xdg-config/gtk-4.0:ro \
+            --filesystem=xdg-data/themes:ro \
+            --filesystem=~/.themes:ro 2>/dev/null || true
+        log_ok "Applied Flatpak filesystem overrides (gtk-3.0, gtk-4.0, themes)"
+
+        if flatpak remotes 2>/dev/null | grep -qw "flathub"; then
+            local -a flatpak_theme_missing=()
+            for t_pkg in org.gtk.Gtk3theme.adw-gtk3 org.gtk.Gtk3theme.adw-gtk3-dark; do
+                if ! flatpak list --runtime 2>/dev/null | grep -qw "$t_pkg"; then
+                    flatpak_theme_missing+=("$t_pkg")
+                fi
+            done
+            if [[ ${#flatpak_theme_missing[@]} -gt 0 ]]; then
+                log_action "Installing missing Flatpak GTK3 theme runtimes: ${flatpak_theme_missing[*]}..."
+                flatpak install -y --noninteractive flathub "${flatpak_theme_missing[@]}" 2>/dev/null || true
+                log_ok "Flatpak GTK3 theme runtimes processed"
+            else
+                log_ok "Flatpak GTK3 theme runtimes already installed"
+            fi
+        fi
+    else
+        log_warn "Flatpak is not installed; skipping Flatpak GTK dynamic color overrides"
+    fi
+}
+
 setup_niri_configuration() {
     step_header 4 6 "Configuring Niri Compositor & Shell Integration"
 
@@ -437,20 +511,7 @@ EOF
         log_ok "Added Matugen theme include to $ghostty_conf"
     fi
 
-    local gtk3_dir="$HOME/.config/gtk-3.0"
-    mkdir -p "$gtk3_dir"
-    if [[ ! -f "$gtk3_dir/settings.ini" ]]; then
-        cat <<'EOF' > "$gtk3_dir/settings.ini"
-[Settings]
-gtk-theme-name = adw-gtk3-dark
-gtk-application-prefer-dark-theme = 1
-EOF
-        log_ok "Configured GTK 3 settings: $gtk3_dir/settings.ini"
-    fi
-
-    if command -v gsettings >/dev/null 2>&1; then
-        gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 2>/dev/null || true
-    fi
+    setup_gtk_and_flatpak_theming
 
     if command -v niri >/dev/null 2>&1; then
         if niri validate -c "$primary_config" >/dev/null 2>&1; then
@@ -716,6 +777,17 @@ verify_installation() {
         all_found=false
     fi
 
+    if command -v flatpak >/dev/null 2>&1; then
+        local flatpak_overrides
+        flatpak_overrides="$(flatpak override --user --show 2>/dev/null || true)"
+        if [[ "$flatpak_overrides" =~ xdg-config/gtk-4\.0 && "$flatpak_overrides" =~ xdg-config/gtk-3\.0 ]]; then
+            log_ok "Flatpak GTK dynamic color overrides verified"
+        else
+            log_warn "Flatpak GTK dynamic color overrides may not be active"
+            all_found=false
+        fi
+    fi
+
     if [[ "$all_found" == "true" ]]; then
         log_ok "System dependencies, fonts, and launcher binaries validated"
     fi
@@ -746,8 +818,9 @@ Options:
 
 Description:
   Installs Quickshell (via errornointernet/quickshell COPR), Ghostty (via
-  scottames/ghostty COPR), Greetd, Niri, Matugen, wl-mirror, and dependencies on Fedora
-  Linux, configures Wisp Shell Niri integration (wisp-shell.kdl), sets up
+  scottames/ghostty COPR), Greetd, Niri, Matugen, wl-mirror, Flatpak, and dependencies
+  on Fedora Linux, configures Wisp Shell Niri integration (wisp-shell.kdl),
+  configures Flatpak sandbox overrides for GTK dynamic colors, sets up
   hardened security permissions, disables conflicting display managers (e.g.
   GDM, SDDM), and enables greetd.service as the default display manager.
 EOF

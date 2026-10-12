@@ -28,6 +28,7 @@ The installer supports Fedora. It installs the required tools:
 - polkit and GLib utilities
 - ACL and fontconfig support
 - Google Material Symbols Rounded and Inter fonts
+- Flatpak
 
 It also:
 
@@ -36,4 +37,5 @@ It also:
 - Locates `greeter.qml` from the installed project or shared system paths
 - Configures Niri compositor integration via `wisp-shell.kdl` (`include "wisp-shell.kdl"`)
 - Links dynamic Ghostty Matugen theme configuration
+- Configures Flatpak sandbox overrides for GTK dynamic colors
 - Grants the `greeter` user access to the shell source and `~/.config/wisp-shell`
