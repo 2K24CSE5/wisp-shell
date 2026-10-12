@@ -28,6 +28,49 @@ ColumnLayout {
                 onToggled: checked => SettingsService.setOpenMaximized(checked)
             }
         }
+
+        CardRow {
+            Layout.fillWidth: true
+            leadingIcon: "\ue3c6"
+            title: "Window border"
+            subtitle: "Continuous border drawn around all windows"
+
+            Toggle {
+                checked: Config.borderEnabled
+                leftText: "Off"
+                rightText: "On"
+                onToggled: checked => SettingsService.setBorderEnabled(checked)
+            }
+        }
+
+        CardRow {
+            visible: Config.borderEnabled
+            Layout.fillWidth: true
+            leadingIcon: "\ue22b"
+            title: "Border width"
+            subtitle: "Adjust border thickness (" + Config.borderWidth + "px)"
+
+            Stepper {
+                value: Config.borderWidth
+                minimumValue: 1
+                maximumValue: 20
+                onValueModified: val => SettingsService.setBorderWidth(val)
+            }
+        }
+
+        CardRow {
+            Layout.fillWidth: true
+            leadingIcon: "\ue9eb"
+            title: "Window gaps"
+            subtitle: "Space between windows (" + Config.gaps + "px)"
+
+            Stepper {
+                value: Config.gaps
+                minimumValue: 0
+                maximumValue: 64
+                onValueModified: val => SettingsService.setGaps(val)
+            }
+        }
     }
 
     Item {

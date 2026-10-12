@@ -11,14 +11,17 @@ hotkey-overlay {
 }
 
 layout {
+    gaps 10
     background-color "transparent"
 
     focus-ring {
+        off
         active-color "#c7cc79"
         inactive-color "#47473b"
     }
 
     border {
+        off
         active-color "#c7cc79"
         inactive-color "#47473b"
     }

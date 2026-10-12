@@ -267,6 +267,7 @@ install_packages() {
         matugen
         ghostty
         wl-mirror
+        adw-gtk3-theme
     )
 
     local -a missing=()
@@ -434,6 +435,21 @@ EOF
     elif ! grep -q "theme.conf" "$ghostty_conf"; then
         printf '\nconfig-file = ?theme.conf\n' >> "$ghostty_conf"
         log_ok "Added Matugen theme include to $ghostty_conf"
+    fi
+
+    local gtk3_dir="$HOME/.config/gtk-3.0"
+    mkdir -p "$gtk3_dir"
+    if [[ ! -f "$gtk3_dir/settings.ini" ]]; then
+        cat <<'EOF' > "$gtk3_dir/settings.ini"
+[Settings]
+gtk-theme-name = adw-gtk3-dark
+gtk-application-prefer-dark-theme = 1
+EOF
+        log_ok "Configured GTK 3 settings: $gtk3_dir/settings.ini"
+    fi
+
+    if command -v gsettings >/dev/null 2>&1; then
+        gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 2>/dev/null || true
     fi
 
     if command -v niri >/dev/null 2>&1; then

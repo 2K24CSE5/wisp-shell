@@ -1,12 +1,11 @@
 import QtQuick
-import QtQuick.Layouts
 import qs.configs
 import qs.services
 
 Rectangle {
     id: root
 
-    implicitWidth: mainRow.implicitWidth + 20
+    implicitWidth: iconText.implicitWidth + 20
     implicitHeight: 34
 
     readonly property bool hasLeftNeighbor: TrayService.hasItems
@@ -47,62 +46,19 @@ Rectangle {
         return Color.muted;
     }
 
-    RowLayout {
-        id: mainRow
+    Text {
+        id: iconText
         anchors.centerIn: parent
-        spacing: 6
+        text: MirrorService.isMirroring ? "\ue308" : "\ue307"
+        font.family: Config.iconFont
+        font.pixelSize: 16
+        color: root.accentColor
+        verticalAlignment: Text.AlignVCenter
+        horizontalAlignment: Text.AlignHCenter
 
-        Text {
-            text: MirrorService.isMirroring ? "\ue308" : "\ue307"
-            font.family: Config.iconFont
-            font.pixelSize: 16
-            color: root.accentColor
-            verticalAlignment: Text.AlignVCenter
-            Layout.alignment: Qt.AlignVCenter
-
-            Behavior on color {
-                ColorAnimation {
-                    duration: 150
-                }
-            }
-        }
-
-        ColumnLayout {
-            spacing: -2
-            Layout.alignment: Qt.AlignVCenter
-
-            RowLayout {
-                spacing: 2
-                Layout.alignment: Qt.AlignLeft
-
-                Text {
-                    text: "PROJ"
-                    font.family: Config.textFont
-                    font.pixelSize: 8
-                    font.bold: true
-                    color: root.accentColor
-                    lineHeight: 1.0
-                    verticalAlignment: Text.AlignVCenter
-                    Layout.alignment: Qt.AlignVCenter
-                }
-            }
-
-            Text {
-                text: {
-                    if (MirrorService.isMirroring)
-                        return "Active";
-                    if (!MirrorService.hasWlMirror)
-                        return "Install";
-                    if (MirrorService.hasExternalDisplay)
-                        return "Ready";
-                    return "Mirror";
-                }
-                font.family: Config.textFont
-                font.pixelSize: 10
-                font.bold: true
-                color: MirrorService.isMirroring ? Color.primary : Color.text
-                lineHeight: 1.0
-                Layout.alignment: Qt.AlignLeft
+        Behavior on color {
+            ColorAnimation {
+                duration: 150
             }
         }
     }

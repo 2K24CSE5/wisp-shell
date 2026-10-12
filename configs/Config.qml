@@ -17,6 +17,11 @@ Singleton {
     property var settings: ({
             wallpaper: "",
             radius: 12,
+            borderEnabled: false,
+            borderWidth: 4,
+            focusRingEnabled: false,
+            focusRingWidth: 4,
+            gaps: 16,
             iconFont: "Material Symbols Rounded",
             textFont: "Inter",
             idleLockTimeout: 0,
@@ -29,6 +34,11 @@ Singleton {
 
     readonly property string wallpaper: settings.wallpaper
     readonly property int radius: settings.radius
+    readonly property bool borderEnabled: settings.borderEnabled === true
+    readonly property int borderWidth: Math.max(1, Number(settings.borderWidth) || 4)
+    readonly property bool focusRingEnabled: settings.focusRingEnabled === true
+    readonly property int focusRingWidth: Math.max(1, Number(settings.focusRingWidth) || 4)
+    readonly property int gaps: settings.gaps !== undefined ? Math.max(0, Number(settings.gaps)) : 16
     readonly property string iconFont: settings.iconFont
     readonly property string textFont: settings.textFont
     readonly property int idleLockTimeout: Math.max(0, Number(settings.idleLockTimeout) || 0)
@@ -43,7 +53,7 @@ Singleton {
             return;
         initProcess.command = ["sh", "-c", "mkdir -p '" + config.configDir + "' && " +
             "if [ ! -f '" + config.configPath + "' ]; then " +
-            "  echo '{\"wallpaper\": \"\", \"radius\": 12, \"iconFont\": \"Material Symbols Rounded\", \"textFont\": \"Inter\", \"idleLockTimeout\": 0, \"fadeDuration\": 1000, \"lockOnLidClose\": false, \"fadeToMonitorOff\": true, \"selectedSession\": \"\", \"openMaximized\": false}' > '" + config.configPath + "'; " +
+            "  echo '{\"wallpaper\": \"\", \"radius\": 12, \"borderEnabled\": false, \"borderWidth\": 4, \"focusRingEnabled\": false, \"focusRingWidth\": 4, \"gaps\": 16, \"iconFont\": \"Material Symbols Rounded\", \"textFont\": \"Inter\", \"idleLockTimeout\": 0, \"fadeDuration\": 1000, \"lockOnLidClose\": false, \"fadeToMonitorOff\": true, \"selectedSession\": \"\", \"openMaximized\": false}' > '" + config.configPath + "'; " +
             "fi && chmod 0666 '" + config.configPath + "' && " +
             "rm -f '" + config.configDir + "/niri.kdl'"
         ];
@@ -133,6 +143,46 @@ Singleton {
         syncNiriConfig();
     }
 
+    function setBorderEnabled(enabled: bool): void {
+        const updated = Object.assign({}, settings);
+        updated.borderEnabled = enabled;
+        settings = updated;
+        save();
+        syncNiriConfig();
+    }
+
+    function setBorderWidth(value: int): void {
+        const updated = Object.assign({}, settings);
+        updated.borderWidth = Math.max(1, value);
+        settings = updated;
+        save();
+        syncNiriConfig();
+    }
+
+    function setFocusRingEnabled(enabled: bool): void {
+        const updated = Object.assign({}, settings);
+        updated.focusRingEnabled = enabled;
+        settings = updated;
+        save();
+        syncNiriConfig();
+    }
+
+    function setFocusRingWidth(value: int): void {
+        const updated = Object.assign({}, settings);
+        updated.focusRingWidth = Math.max(1, value);
+        settings = updated;
+        save();
+        syncNiriConfig();
+    }
+
+    function setGaps(value: int): void {
+        const updated = Object.assign({}, settings);
+        updated.gaps = Math.max(0, value);
+        settings = updated;
+        save();
+        syncNiriConfig();
+    }
+
     function setIconFont(fontName: string): void {
         const updated = Object.assign({}, settings);
         updated.iconFont = fontName;
@@ -216,6 +266,43 @@ Singleton {
         } catch (_) {}
 
         const winRadius = Math.max(0, Number(config.radius) || 12);
+        const bWidth = Math.max(1, Number(config.borderWidth) || 4);
+        const fWidth = Math.max(1, Number(config.focusRingWidth) || 4);
+        const winGaps = Math.max(0, config.gaps !== undefined ? Number(config.gaps) : 16);
+        const isBorder = (config.borderEnabled === true) || (config.settings && config.settings.borderEnabled === true);
+        const isFocusRing = (config.focusRingEnabled === true) || (config.settings && config.settings.focusRingEnabled === true);
+
+        let focusRingKdl = "";
+        if (isFocusRing) {
+            focusRingKdl = "    focus-ring {\n" +
+                "        on\n" +
+                "        width " + fWidth + "\n" +
+                "        active-color \"" + activeColor + "\"\n" +
+                "        inactive-color \"" + inactiveColor + "\"\n" +
+                "    }\n\n";
+        } else {
+            focusRingKdl = "    focus-ring {\n" +
+                "        off\n" +
+                "        active-color \"" + activeColor + "\"\n" +
+                "        inactive-color \"" + inactiveColor + "\"\n" +
+                "    }\n\n";
+        }
+
+        let borderKdl = "";
+        if (isBorder) {
+            borderKdl = "    border {\n" +
+                "        on\n" +
+                "        width " + bWidth + "\n" +
+                "        active-color \"" + activeColor + "\"\n" +
+                "        inactive-color \"" + inactiveColor + "\"\n" +
+                "    }\n";
+        } else {
+            borderKdl = "    border {\n" +
+                "        off\n" +
+                "        active-color \"" + activeColor + "\"\n" +
+                "        inactive-color \"" + inactiveColor + "\"\n" +
+                "    }\n";
+        }
 
         let kdl = "// ==============================================================================\n" +
             "//  Wisp Shell — Niri Compositor Configuration\n" +
@@ -227,15 +314,10 @@ Singleton {
             "    skip-at-startup\n" +
             "}\n\n" +
             "layout {\n" +
+            "    gaps " + winGaps + "\n" +
             "    background-color \"transparent\"\n\n" +
-            "    focus-ring {\n" +
-            "        active-color \"" + activeColor + "\"\n" +
-            "        inactive-color \"" + inactiveColor + "\"\n" +
-            "    }\n\n" +
-            "    border {\n" +
-            "        active-color \"" + activeColor + "\"\n" +
-            "        inactive-color \"" + inactiveColor + "\"\n" +
-            "    }\n" +
+            focusRingKdl +
+            borderKdl +
             "}\n\n" +
             "layer-rule {\n" +
             "    match namespace=\"^quickshell-wallpaper$\"\n" +
@@ -326,6 +408,36 @@ Singleton {
         }
         function getOpenMaximized(): bool {
             return config.openMaximized;
+        }
+        function setBorderEnabled(val: bool): void {
+            config.setBorderEnabled(val);
+        }
+        function getBorderEnabled(): bool {
+            return config.borderEnabled;
+        }
+        function setBorderWidth(val: int): void {
+            config.setBorderWidth(val);
+        }
+        function getBorderWidth(): int {
+            return config.borderWidth;
+        }
+        function setFocusRingEnabled(val: bool): void {
+            config.setFocusRingEnabled(val);
+        }
+        function getFocusRingEnabled(): bool {
+            return config.focusRingEnabled;
+        }
+        function setFocusRingWidth(val: int): void {
+            config.setFocusRingWidth(val);
+        }
+        function getFocusRingWidth(): int {
+            return config.focusRingWidth;
+        }
+        function setGaps(val: int): void {
+            config.setGaps(val);
+        }
+        function getGaps(): int {
+            return config.gaps;
         }
     }
 }

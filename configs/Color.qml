@@ -195,14 +195,21 @@ Singleton {
         target: Config
         function onTargetHomeChanged(): void {
             root.ensureConfig();
+            root.syncSystemTheme();
         }
         function onLoadedChanged(): void {
             root.ensureConfig();
+            root.syncSystemTheme();
         }
     }
 
     Component.onCompleted: {
         root.ensureConfig();
+        root.syncSystemTheme();
+    }
+
+    onIsDarkChanged: {
+        root.syncSystemTheme();
     }
 
     Process {
@@ -222,6 +229,42 @@ Singleton {
                 console.error("[Color] Error writing colors.json:", exitCode);
             }
         }
+    }
+
+    Process {
+        id: systemThemeProcess
+        running: false
+        onExited: exitCode => {
+            if (exitCode !== 0) {
+                console.warn("[Color] Error syncing system theme:", exitCode);
+            }
+        }
+    }
+
+    function syncSystemTheme(): void {
+        if (!Config.targetHome || Config.targetHome.startsWith("/var/lib") || Config.targetHome === "/root")
+            return;
+        const colorScheme = root.isDark ? "prefer-dark" : "prefer-light";
+        const gtkTheme = root.isDark ? "adw-gtk3-dark" : "adw-gtk3";
+        const preferDarkInt = root.isDark ? 1 : 0;
+
+        if (systemThemeProcess.running) {
+            systemThemeProcess.running = false;
+        }
+
+        const cmd = "if command -v gsettings >/dev/null 2>&1; then " +
+            "gsettings set org.gnome.desktop.interface color-scheme '" + colorScheme + "' 2>/dev/null || true; " +
+            "gsettings set org.gnome.desktop.interface gtk-theme '" + gtkTheme + "' 2>/dev/null || true; " +
+            "fi; " +
+            "mkdir -p '" + Config.targetHome + "/.config/gtk-3.0' && " +
+            "cat << 'EOF' > '" + Config.targetHome + "/.config/gtk-3.0/settings.ini'\n" +
+            "[Settings]\n" +
+            "gtk-theme-name = " + gtkTheme + "\n" +
+            "gtk-application-prefer-dark-theme = " + preferDarkInt + "\n" +
+            "EOF";
+
+        systemThemeProcess.command = ["sh", "-c", cmd];
+        systemThemeProcess.running = true;
     }
 
     FileView {
