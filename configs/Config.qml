@@ -354,6 +354,9 @@ Singleton {
             "    Mod+S hotkey-overlay-title=\"Toggle Wisp Shell Settings\" {\n" +
             "        spawn-sh \"quickshell -c wisp-shell ipc call settings toggle\"\n" +
             "    }\n\n" +
+            "    Mod+N hotkey-overlay-title=\"Toggle Notifications\" {\n" +
+            "        spawn-sh \"quickshell -c wisp-shell ipc call notifications toggle\"\n" +
+            "    }\n\n" +
             "    Mod+T hotkey-overlay-title=\"Open a Terminal: ghostty\" {\n" +
             "        spawn \"ghostty\"\n" +
             "    }\n" +

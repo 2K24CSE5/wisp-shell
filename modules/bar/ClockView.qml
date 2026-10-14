@@ -7,9 +7,10 @@ import qs.components
 Item {
     id: root
 
-    signal collapseRequested()
+    signal collapseRequested
 
     implicitHeight: contentCol.implicitHeight + 12
+    implicitWidth: contentCol.implicitWidth + 24
 
     ColumnLayout {
         id: contentCol
@@ -40,13 +41,6 @@ Item {
                     font.pixelSize: 11
                     color: Color.primary
                 }
-            }
-
-            CloseButton {
-                size: 26
-                iconSize: 16
-                Layout.alignment: Qt.AlignTop
-                onClicked: root.collapseRequested()
             }
         }
 

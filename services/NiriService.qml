@@ -12,6 +12,9 @@ QtObject {
     property int currentWorkspaceIndex: 0
     property var activeWorkspaces: []
 
+    // --- Overview State ---
+    property bool isOverviewActive: false
+
     // --- Active Window State ---
     property string niriTitle: ""
     property string niriAppId: ""
@@ -115,6 +118,10 @@ QtObject {
                 try {
                     const event = JSON.parse(trimmed);
 
+                    if (event.OverviewOpenedOrClosed) {
+                        root.isOverviewActive = Boolean(event.OverviewOpenedOrClosed.is_open);
+                    }
+
                     if (event.WorkspacesChanged || event.WorkspaceActivated || event.WindowFocusChanged || event.FocusedWindowChanged) {
                         root.fetchDebounceTimer.restart();
                     }
@@ -124,6 +131,23 @@ QtObject {
 
         onExited: () => {
             reconnectTimer.restart();
+        }
+    }
+
+    // 4. Snapshot fetcher: Overview State
+    property Process overviewSnapshotProcess: Process {
+        command: ["niri", "msg", "-j", "overview-state"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (!this.text || this.text.trim().length === 0)
+                    return;
+                try {
+                    const state = JSON.parse(this.text.trim());
+                    if (state && typeof state.is_open === "boolean") {
+                        root.isOverviewActive = state.is_open;
+                    }
+                } catch (_) {}
+            }
         }
     }
 
@@ -146,6 +170,8 @@ QtObject {
             root.wsSnapshotProcess.running = true;
         if (!root.winSnapshotProcess.running)
             root.winSnapshotProcess.running = true;
+        if (!root.overviewSnapshotProcess.running)
+            root.overviewSnapshotProcess.running = true;
     }
 
     function parseWorkspaces(jsonText: string): void {

@@ -10,15 +10,18 @@ Item {
     readonly property int padMargin: 4
 
     implicitWidth: railTrack.implicitWidth
-    implicitHeight: 28
+    implicitHeight: 32
 
     // Recessed track
     Rectangle {
         id: railTrack
         anchors.fill: parent
         implicitWidth: wsRow.implicitWidth + (root.padMargin * 2)
-        implicitHeight: 28
-        radius: Math.max(2, (Config.radius ?? 8) - 2)
+        implicitHeight: 32
+        topLeftRadius: Config.radius ?? 8
+        bottomLeftRadius: Config.radius ?? 8
+        topRightRadius: 4
+        bottomRightRadius: 4
         color: Color.surface
 
         // Direct mathematical slider positioning

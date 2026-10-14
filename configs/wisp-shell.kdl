@@ -16,14 +16,14 @@ layout {
 
     focus-ring {
         off
-        active-color "#c7cc79"
-        inactive-color "#47473b"
+        active-color "#85d6c0"
+        inactive-color "#3f4945"
     }
 
     border {
         off
-        active-color "#c7cc79"
-        inactive-color "#47473b"
+        active-color "#85d6c0"
+        inactive-color "#3f4945"
     }
 }
 
@@ -45,7 +45,7 @@ overview {
 
 recent-windows {
     highlight {
-        active-color "#c7cc79"
+        active-color "#85d6c0"
         urgent-color "#ffb4ab"
         corner-radius 12
     }
@@ -63,6 +63,10 @@ window-rule {
 binds {
     Mod+S hotkey-overlay-title="Toggle Wisp Shell Settings" {
         spawn-sh "quickshell -c wisp-shell ipc call settings toggle"
+    }
+
+    Mod+N hotkey-overlay-title="Toggle Notifications" {
+        spawn-sh "quickshell -c wisp-shell ipc call notifications toggle"
     }
 
     Mod+T hotkey-overlay-title="Open a Terminal: ghostty" {

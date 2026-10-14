@@ -40,7 +40,7 @@ ColumnLayout {
             Image {
                 id: previewImage
                 anchors.fill: parent
-                visible: false
+                opacity: 0
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 mipmap: true
@@ -53,7 +53,7 @@ ColumnLayout {
             Rectangle {
                 id: previewMask
                 anchors.fill: parent
-                visible: false
+                opacity: 0
                 radius: Config.radius
                 color: "black"
                 antialiasing: true

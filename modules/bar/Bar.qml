@@ -1,9 +1,9 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Io
 import qs.configs
 import qs.services
+import qs.modules.notifications
 
 PanelWindow {
     id: barWindow
@@ -15,73 +15,12 @@ PanelWindow {
     }
 
     exclusiveZone: 42
-    implicitHeight: 600
+    implicitHeight: 650
     color: "transparent"
     visible: !LockScreenService.isLocked
 
     mask: Region {
         item: barSurface
-    }
-
-    property string activeTab: ""
-    property string lastActiveTab: "quick"
-    readonly property bool isExpanded: activeTab !== ""
-
-    onActiveTabChanged: {
-        if (activeTab !== "") {
-            lastActiveTab = activeTab;
-        }
-    }
-
-    function toggleTab(tabName: string): void {
-        if (activeTab === tabName) {
-            activeTab = "";
-        } else {
-            activeTab = tabName;
-            if (tabName === "clock") {
-                DateTimeService.resetToToday();
-            } else if (tabName === "quick") {
-                Qt.callLater(() => {
-                    NetworkService.poll();
-                    BluetoothService.poll();
-                });
-            } else if (tabName === "battery") {
-                Qt.callLater(() => BatteryService.poll());
-            } else if (tabName === "mirror") {
-                Qt.callLater(() => MirrorService.poll());
-            }
-        }
-    }
-
-    function collapse(): void {
-        activeTab = "";
-    }
-
-    Connections {
-        target: LockScreenService
-        function onIsLockedChanged(): void {
-            if (LockScreenService.isLocked) {
-                barWindow.collapse();
-            }
-        }
-        function onIsDimmedChanged(): void {
-            if (LockScreenService.isDimmed) {
-                barWindow.collapse();
-            }
-        }
-    }
-
-    property IpcHandler barIpc: IpcHandler {
-        target: "bar"
-        function toggle(tab: string): void {
-            barWindow.toggleTab(tab || "quick");
-        }
-        function collapse(): void {
-            barWindow.collapse();
-        }
-        function isExpanded(): bool {
-            return barWindow.isExpanded;
-        }
     }
 
     Rectangle {
@@ -101,28 +40,47 @@ PanelWindow {
 
         focus: true
         Keys.onEscapePressed: event => {
-            if (barWindow.isExpanded) {
-                barWindow.collapse();
+            if (BarService.isExpanded) {
+                BarService.collapse();
                 event.accepted = true;
             }
         }
 
-        readonly property real collapsedWidth: topRow.implicitWidth + 16
+        readonly property bool hasToast: NotificationService.toasts.length > 0 && !BarService.isExpanded
+        readonly property real toastHeight: hasToast ? (toastArea.implicitHeight + 8) : 0
+        readonly property real collapsedWidth: topRow.implicitWidth + 6
         readonly property real targetExpandedWidth: {
-            const tab = barWindow.activeTab !== "" ? barWindow.activeTab : barWindow.lastActiveTab;
+            const tab = BarService.activeTab !== "" ? BarService.activeTab : BarService.lastActiveTab;
+            let viewWidth = 0;
             if (tab === "clock")
-                return Math.max(collapsedWidth, 380);
-            if (tab === "quick")
-                return Math.max(collapsedWidth, 420);
-            if (tab === "battery")
-                return Math.max(collapsedWidth, 360);
-            if (tab === "mirror")
-                return Math.max(collapsedWidth, 380);
-            return collapsedWidth;
+                viewWidth = clockView.implicitWidth;
+            else if (tab === "quick")
+                viewWidth = quickView.implicitWidth;
+            else if (tab === "battery")
+                viewWidth = batteryView.implicitWidth;
+            else if (tab === "mirror")
+                viewWidth = mirrorView.implicitWidth;
+            else if (tab === "notifications")
+                viewWidth = notificationView.implicitWidth;
+            // 16 = drawerContainer left+right margins (8+8)
+            return Math.max(collapsedWidth, viewWidth + 16);
         }
 
-        width: Math.min(barWindow.width - 16, barWindow.isExpanded ? targetExpandedWidth : collapsedWidth)
-        height: barWindow.isExpanded ? (topRow.height + 20 + drawerContainer.implicitHeight) : (topRow.height + 8)
+        width: {
+            if (BarService.isExpanded)
+                return Math.min(barWindow.width - 16, targetExpandedWidth);
+            if (hasToast)
+                return Math.min(barWindow.width - 16, Math.max(collapsedWidth, 380));
+            return Math.min(barWindow.width - 16, collapsedWidth);
+        }
+
+        height: {
+            if (BarService.isExpanded)
+                return topRow.height + 20 + drawerContainer.implicitHeight;
+            if (hasToast)
+                return topRow.height + 12 + toastHeight;
+            return topRow.height + 8;
+        }
 
         Behavior on width {
             NumberAnimation {
@@ -147,8 +105,8 @@ PanelWindow {
                 topMargin: 4
                 horizontalCenter: parent.horizontalCenter
             }
-            height: 28
-            spacing: 6
+            height: 32
+            spacing: 2
 
             // 1. Workspaces
             Workspaces {}
@@ -157,10 +115,10 @@ PanelWindow {
             Rectangle {
                 id: clockBtn
                 implicitWidth: clockRow.implicitWidth + 16
-                implicitHeight: 28
-                radius: Math.max(2, Config.radius - 2)
+                implicitHeight: 32
+                radius: 4
                 color: {
-                    if (barWindow.activeTab === "clock")
+                    if (BarService.activeTab === "clock")
                         return Color.primary;
                     if (clockMouse.containsMouse)
                         return Color.overlay;
@@ -187,7 +145,7 @@ PanelWindow {
                             font.family: Config.textFont
                             font.pixelSize: 8
                             font.bold: true
-                            color: (barWindow.activeTab === "clock") ? Color.background : Color.primary
+                            color: (BarService.activeTab === "clock") ? Color.background : Color.primary
                             lineHeight: 1.0
                         }
 
@@ -195,7 +153,7 @@ PanelWindow {
                             text: DateTimeService.currentMonthDate
                             font.family: Config.textFont
                             font.pixelSize: 9
-                            color: (barWindow.activeTab === "clock") ? Color.background : Color.text
+                            color: (BarService.activeTab === "clock") ? Color.background : Color.text
                             lineHeight: 1.0
                         }
                     }
@@ -203,7 +161,7 @@ PanelWindow {
                     Rectangle {
                         implicitWidth: 1
                         implicitHeight: 11
-                        color: (barWindow.activeTab === "clock") ? (Color.background + "66") : Color.overlay
+                        color: (BarService.activeTab === "clock") ? (Color.background + "66") : Color.subtle
                         opacity: 0.8
                         Layout.alignment: Qt.AlignVCenter
                     }
@@ -213,7 +171,7 @@ PanelWindow {
                         font.family: Config.textFont
                         font.pixelSize: 13
                         font.bold: true
-                        color: (barWindow.activeTab === "clock") ? Color.background : Color.text
+                        color: (BarService.activeTab === "clock") ? Color.background : Color.text
                         verticalAlignment: Text.AlignVCenter
                     }
                 }
@@ -223,21 +181,60 @@ PanelWindow {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: barWindow.toggleTab("clock")
+                    onClicked: BarService.toggleTab("clock")
                 }
             }
 
             // 3. System Tray
             Tray {}
 
+            // Notification Button
+            Rectangle {
+                id: notifBtn
+                implicitWidth: 32
+                implicitHeight: 32
+                radius: 4
+                color: {
+                    if (BarService.activeTab === "notifications")
+                        return Color.primary;
+                    if (notifMouse.containsMouse)
+                        return Color.overlay;
+                    return Color.surface;
+                }
+
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 140
+                    }
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: NotificationService.count > 0 ? "\ue7f4" : "\ue7f5"
+                    font.family: Config.iconFont
+                    font.pixelSize: 16
+                    color: (BarService.activeTab === "notifications") ? Color.background : (NotificationService.count > 0 ? Color.primary : Color.text)
+                    verticalAlignment: Text.AlignVCenter
+                    horizontalAlignment: Text.AlignHCenter
+                }
+
+                MouseArea {
+                    id: notifMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: BarService.toggleTab("notifications")
+                }
+            }
+
             // 4. Mirror Button
             Rectangle {
                 id: mirrorBtn
-                implicitWidth: 28
-                implicitHeight: 28
-                radius: Math.max(2, Config.radius - 2)
+                implicitWidth: 32
+                implicitHeight: 32
+                radius: 4
                 color: {
-                    if (barWindow.activeTab === "mirror")
+                    if (BarService.activeTab === "mirror")
                         return Color.primary;
                     if (mirrorMouse.containsMouse)
                         return Color.overlay;
@@ -251,7 +248,7 @@ PanelWindow {
                 }
 
                 readonly property color accentColor: {
-                    if (barWindow.activeTab === "mirror")
+                    if (BarService.activeTab === "mirror")
                         return Color.background;
                     if (MirrorService.isMirroring)
                         return Color.primary;
@@ -282,7 +279,7 @@ PanelWindow {
                         if (mouse.button === Qt.RightButton) {
                             MirrorService.toggleMirroring();
                         } else {
-                            barWindow.toggleTab("mirror");
+                            BarService.toggleTab("mirror");
                         }
                     }
                 }
@@ -293,10 +290,10 @@ PanelWindow {
                 id: batBtn
                 visible: BatteryService.hasBattery
                 implicitWidth: batCol.implicitWidth + 14
-                implicitHeight: 28
-                radius: Math.max(2, Config.radius - 2)
+                implicitHeight: 32
+                radius: 4
                 color: {
-                    if (barWindow.activeTab === "battery")
+                    if (BarService.activeTab === "battery")
                         return Color.primary;
                     if (batMouse.containsMouse)
                         return Color.overlay;
@@ -310,7 +307,7 @@ PanelWindow {
                 }
 
                 readonly property color accentColor: {
-                    if (barWindow.activeTab === "battery")
+                    if (BarService.activeTab === "battery")
                         return Color.background;
                     if (BatteryService.isCharging)
                         return Color.primary;
@@ -355,7 +352,7 @@ PanelWindow {
                         font.family: Config.textFont
                         font.pixelSize: 11
                         font.bold: true
-                        color: (barWindow.activeTab === "battery") ? Color.background : Color.text
+                        color: (BarService.activeTab === "battery") ? Color.background : Color.text
                         lineHeight: 1.0
                         Layout.alignment: Qt.AlignHCenter
                     }
@@ -366,7 +363,7 @@ PanelWindow {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: barWindow.toggleTab("battery")
+                    onClicked: BarService.toggleTab("battery")
                 }
             }
 
@@ -374,10 +371,13 @@ PanelWindow {
             Rectangle {
                 id: quickBtn
                 implicitWidth: quickRow.implicitWidth + 14
-                implicitHeight: 28
-                radius: Math.max(2, Config.radius - 2)
+                implicitHeight: 32
+                topLeftRadius: 4
+                bottomLeftRadius: 4
+                topRightRadius: Config.radius
+                bottomRightRadius: Config.radius
                 color: {
-                    if (barWindow.activeTab === "quick")
+                    if (BarService.activeTab === "quick")
                         return Color.primary;
                     if (quickMouse.containsMouse)
                         return Color.overlay;
@@ -408,7 +408,7 @@ PanelWindow {
                             return "\ue648"; // wifi_off
                         }
                         color: {
-                            if (barWindow.activeTab === "quick")
+                            if (BarService.activeTab === "quick")
                                 return Color.background;
                             if (NetworkService.ethernetConnected || NetworkService.wifiConnected)
                                 return Color.primary;
@@ -427,7 +427,7 @@ PanelWindow {
                             return "\ue1a9"; // bluetooth_disabled
                         }
                         color: {
-                            if (barWindow.activeTab === "quick")
+                            if (BarService.activeTab === "quick")
                                 return Color.background;
                             if (!BluetoothService.enabled)
                                 return Color.muted;
@@ -441,7 +441,7 @@ PanelWindow {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: barWindow.toggleTab("quick")
+                    onClicked: BarService.toggleTab("quick")
                 }
             }
         }
@@ -459,7 +459,7 @@ PanelWindow {
             }
             height: implicitHeight
 
-            readonly property string currentTab: barWindow.activeTab !== "" ? barWindow.activeTab : barWindow.lastActiveTab
+            readonly property string currentTab: BarService.activeTab !== "" ? BarService.activeTab : BarService.lastActiveTab
 
             implicitHeight: {
                 if (currentTab === "clock")
@@ -470,14 +470,31 @@ PanelWindow {
                     return batteryView.implicitHeight;
                 if (currentTab === "mirror")
                     return mirrorView.implicitHeight;
+                if (currentTab === "notifications")
+                    return notificationView.implicitHeight;
                 return 0;
             }
+
+            implicitWidth: {
+                if (currentTab === "clock")
+                    return clockView.implicitWidth;
+                if (currentTab === "quick")
+                    return quickView.implicitWidth;
+                if (currentTab === "battery")
+                    return batteryView.implicitWidth;
+                if (currentTab === "mirror")
+                    return mirrorView.implicitWidth;
+                if (currentTab === "notifications")
+                    return notificationView.implicitWidth;
+                return 0;
+            }
+
             visible: opacity > 0.001
-            opacity: barWindow.isExpanded ? 1.0 : 0.0
+            opacity: BarService.isExpanded ? 1.0 : 0.0
 
             Behavior on opacity {
                 NumberAnimation {
-                    duration: barWindow.isExpanded ? 130 : 80
+                    duration: BarService.isExpanded ? 130 : 80
                     easing.type: Easing.OutCubic
                 }
             }
@@ -486,28 +503,84 @@ PanelWindow {
                 id: clockView
                 anchors.fill: parent
                 visible: drawerContainer.currentTab === "clock"
-                onCollapseRequested: barWindow.collapse()
+                onCollapseRequested: BarService.collapse()
             }
 
             QuickView {
                 id: quickView
                 anchors.fill: parent
                 visible: drawerContainer.currentTab === "quick"
-                onCollapseRequested: barWindow.collapse()
+                onCollapseRequested: BarService.collapse()
             }
 
             BatteryView {
                 id: batteryView
                 anchors.fill: parent
                 visible: drawerContainer.currentTab === "battery"
-                onCollapseRequested: barWindow.collapse()
+                onCollapseRequested: BarService.collapse()
             }
 
             MirrorView {
                 id: mirrorView
                 anchors.fill: parent
                 visible: drawerContainer.currentTab === "mirror"
-                onCollapseRequested: barWindow.collapse()
+                onCollapseRequested: BarService.collapse()
+            }
+
+            NotificationView {
+                id: notificationView
+                anchors.fill: parent
+                visible: drawerContainer.currentTab === "notifications"
+                onCollapseRequested: BarService.collapse()
+            }
+        }
+
+        // Active Toast Popup Container (Integrated in Bar)
+        ColumnLayout {
+            id: toastArea
+            anchors {
+                top: topRow.bottom
+                topMargin: 8
+                left: parent.left
+                right: parent.right
+                leftMargin: 8
+                rightMargin: 8
+            }
+            spacing: 6
+            visible: barSurface.hasToast
+            opacity: barSurface.hasToast ? 1.0 : 0.0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 140
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            Repeater {
+                model: barSurface.hasToast ? NotificationService.toasts : []
+
+                delegate: Rectangle {
+                    id: toastCard
+                    required property var modelData
+
+                    Layout.fillWidth: true
+                    implicitHeight: toastItem.implicitHeight + 14
+                    radius: Math.max(4, Config.radius - 4)
+                    color: Color.surface
+
+                    NotificationItem {
+                        id: toastItem
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            verticalCenter: parent.verticalCenter
+                            margins: 8
+                        }
+                        itemData: toastCard.modelData
+                        isToast: true
+                    }
+                }
             }
         }
     }

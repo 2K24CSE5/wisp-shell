@@ -10,6 +10,7 @@ Item {
     signal collapseRequested()
 
     implicitHeight: contentCol.implicitHeight + 12
+    implicitWidth: contentCol.implicitWidth + 24
 
     ColumnLayout {
         id: contentCol

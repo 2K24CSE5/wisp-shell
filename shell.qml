@@ -4,6 +4,7 @@ import qs.modules.settings
 import qs.modules.polkit
 import qs.modules.lockscreen
 import qs.modules.bar
+import qs.modules.notifications
 
 ShellRoot {
     Wallpaper {}

@@ -12,9 +12,9 @@ Rectangle {
 
     readonly property bool expanded: TrayService.expanded
 
-    implicitWidth: expanded ? Math.max(28, contentRow.implicitWidth + 12) : 28
-    implicitHeight: 28
-    radius: Math.max(2, Config.radius - 2)
+    implicitWidth: expanded ? Math.max(32, contentRow.implicitWidth + 12) : 32
+    implicitHeight: 32
+    radius: 4
     color: (!root.expanded && toggleMouse.containsMouse) ? Color.overlay : Color.surface
     visible: TrayService.hasItems
 

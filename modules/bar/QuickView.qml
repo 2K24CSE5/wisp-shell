@@ -8,48 +8,19 @@ import qs.components
 Item {
     id: root
 
-    signal collapseRequested()
+    signal collapseRequested
 
     property bool drawerExpanded: false
     property bool isWifiView: true
 
     implicitHeight: contentCol.implicitHeight + 12
+    implicitWidth: contentCol.implicitWidth + 24
 
     ColumnLayout {
         id: contentCol
         anchors.fill: parent
         anchors.margins: 6
         spacing: 12
-
-        // Header Bar
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 6
-
-            WispIcon {
-                Layout.preferredWidth: 16
-                Layout.preferredHeight: 16
-                Layout.alignment: Qt.AlignVCenter
-                iconColor: Color.text
-            }
-
-            Text {
-                text: "Quick Settings"
-                font.family: Config.textFont
-                font.pixelSize: 13
-                font.bold: true
-                color: Color.text
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignVCenter
-            }
-
-            CloseButton {
-                size: 26
-                iconSize: 16
-                Layout.alignment: Qt.AlignVCenter
-                onClicked: root.collapseRequested()
-            }
-        }
 
         // QuickTile Controls Row
         RowLayout {
