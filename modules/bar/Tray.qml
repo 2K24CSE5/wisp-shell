@@ -13,24 +13,24 @@ Rectangle {
     readonly property bool expanded: TrayService.expanded
 
     implicitWidth: expanded ? Math.max(28, contentRow.implicitWidth + 12) : 28
-    implicitHeight: 34
+    implicitHeight: 28
+    radius: Math.max(2, Config.radius - 2)
+    color: (!root.expanded && toggleMouse.containsMouse) ? Color.overlay : Color.surface
     visible: TrayService.hasItems
 
-    radius: 0
-    topLeftRadius: Config.radius
-    bottomLeftRadius: Config.radius
-    topRightRadius: 4
-    bottomRightRadius: 4
-    color: Color.background
+    Behavior on color {
+        ColorAnimation {
+            duration: 140
+        }
+    }
 
     Behavior on implicitWidth {
         NumberAnimation {
-            duration: 200
+            duration: 180
             easing.type: Easing.OutCubic
         }
     }
 
-    // Robust lazy loader that handles the initial instantiation tick safely
     Loader {
         id: menuLoader
         active: false
@@ -71,11 +71,7 @@ Rectangle {
 
     RowLayout {
         id: contentRow
-        anchors {
-            right: parent.right
-            rightMargin: 6
-            verticalCenter: parent.verticalCenter
-        }
+        anchors.centerIn: parent
         spacing: 3
 
         Item {
@@ -100,7 +96,7 @@ Rectangle {
                         implicitWidth: 20
                         implicitHeight: 20
                         radius: 4
-                        color: itemMouse.containsMouse ? Color.surface : "transparent"
+                        color: itemMouse.containsMouse ? Color.overlay : "transparent"
 
                         Behavior on color {
                             ColorAnimation {
@@ -136,7 +132,6 @@ Rectangle {
                                 if (mouse.button === Qt.LeftButton) {
                                     TrayService.activateItem(trayItemDelegate.modelData);
                                 } else if (mouse.button === Qt.RightButton) {
-                                    // Pass trayItemDelegate so the popup anchors cleanly under this specific icon
                                     TrayService.openMenuForItem(trayItemDelegate, trayItemDelegate.modelData);
                                 } else if (mouse.button === Qt.MiddleButton) {
                                     TrayService.secondaryActivateItem(trayItemDelegate.modelData);
@@ -182,13 +177,13 @@ Rectangle {
                         NumberAnimation {
                             target: trayDrawer
                             property: "implicitWidth"
-                            duration: 200
+                            duration: 180
                             easing.type: Easing.OutCubic
                         }
                         NumberAnimation {
                             target: trayItemsRow
                             property: "opacity"
-                            duration: 100
+                            duration: 80
                             easing.type: Easing.Linear
                         }
                     }
@@ -200,13 +195,13 @@ Rectangle {
                         NumberAnimation {
                             target: trayItemsRow
                             property: "opacity"
-                            duration: 50
+                            duration: 40
                             easing.type: Easing.Linear
                         }
                         NumberAnimation {
                             target: trayDrawer
                             property: "implicitWidth"
-                            duration: 180
+                            duration: 160
                             easing.type: Easing.OutCubic
                         }
                     }
@@ -221,7 +216,6 @@ Rectangle {
             color: Color.overlay
             opacity: root.expanded ? 0.7 : 0.0
             Layout.alignment: Qt.AlignVCenter
-            Layout.rightMargin: 1
 
             Behavior on opacity {
                 NumberAnimation {
@@ -232,16 +226,16 @@ Rectangle {
 
         Item {
             id: toggleBtn
-            implicitWidth: 16
+            implicitWidth: 18
             implicitHeight: 20
             Layout.alignment: Qt.AlignVCenter
 
             Text {
                 id: triggerIcon
                 anchors.centerIn: parent
-                text: root.expanded ? "close" : "chevron_left"
+                text: root.expanded ? "\ue5cd" : "\ue5cb" // close vs chevron_left
                 font.family: Config.iconFont
-                font.pixelSize: root.expanded ? 14 : 18
+                font.pixelSize: root.expanded ? 14 : 16
                 color: root.expanded ? Color.primary : (toggleMouse.containsMouse ? Color.text : Color.muted)
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignHCenter

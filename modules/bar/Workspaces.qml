@@ -2,49 +2,29 @@ import QtQuick
 import qs.configs
 import qs.services
 
-Rectangle {
+Item {
     id: root
 
     readonly property int itemWidth: 20
     readonly property int itemSpacing: 2
     readonly property int padMargin: 4
 
-    implicitWidth: railTrack.implicitWidth + 16
-    implicitHeight: 34
-
-    topLeftRadius: Config.radius
-    bottomLeftRadius: Config.radius
-    topRightRadius: NiriService.hasActiveWindow ? 4 : Config.radius
-    bottomRightRadius: NiriService.hasActiveWindow ? 4 : Config.radius
-
-    Behavior on topRightRadius {
-        NumberAnimation {
-            duration: 180
-            easing.type: Easing.OutCubic
-        }
-    }
-    Behavior on bottomRightRadius {
-        NumberAnimation {
-            duration: 180
-            easing.type: Easing.OutCubic
-        }
-    }
-
-    color: Color.background
+    implicitWidth: railTrack.implicitWidth
+    implicitHeight: 28
 
     // Recessed track
     Rectangle {
         id: railTrack
-        anchors.centerIn: parent
+        anchors.fill: parent
         implicitWidth: wsRow.implicitWidth + (root.padMargin * 2)
-        implicitHeight: 24
-        radius: Config.radius
+        implicitHeight: 28
+        radius: Math.max(2, (Config.radius ?? 8) - 2)
         color: Color.surface
 
         // Direct mathematical slider positioning
         Rectangle {
             id: indicator
-            height: 18
+            height: 20
             width: root.itemWidth
             radius: Math.max(2, (Config.radius ?? 8) - 4)
             color: Color.primary
@@ -86,7 +66,7 @@ Rectangle {
                     readonly property bool isHovered: wsMouse.containsMouse
 
                     implicitWidth: root.itemWidth
-                    implicitHeight: 18
+                    implicitHeight: 20
 
                     Text {
                         anchors.centerIn: parent

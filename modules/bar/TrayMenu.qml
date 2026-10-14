@@ -290,7 +290,6 @@ PopupWindow {
         root.trayItem = trayModelItem;
         root.opener = menuOpener;
 
-        // Perform coordinate mapping once on open
         if (targetItem && targetItem.QsWindow && targetItem.QsWindow.window) {
             const winContent = targetItem.QsWindow.window.contentItem;
             const pt = targetItem.mapToItem(winContent, 0, 0);
