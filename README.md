@@ -4,6 +4,7 @@ Wisp Shell is a Quickshell-based Wayland desktop shell with:
 
 - Wallpaper management and dynamic colors
 - Settings for appearance and Niri
+- Fast keyboard-driven application launcher with category filters and math evaluator
 - A lockscreen and polkit authentication UI
 - A greetd login greeter
 

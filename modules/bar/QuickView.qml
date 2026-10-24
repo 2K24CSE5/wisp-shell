@@ -155,6 +155,25 @@ Item {
                         font.pixelSize: 14
                         color: Color.muted
                     }
+
+                    Text {
+                        visible: root.isWifiView
+                        text: "\ue8b8" // settings
+                        font.family: Config.iconFont
+                        font.pixelSize: 13
+                        color: netSettingsMouse.containsMouse ? Color.primary : Color.muted
+                        MouseArea {
+                            id: netSettingsMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                root.drawerExpanded = false;
+                                root.collapseRequested();
+                                SettingsService.openNetwork();
+                            }
+                        }
+                    }
                 }
 
                 Item {

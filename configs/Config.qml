@@ -351,6 +351,9 @@ Singleton {
         }
 
         kdl += "binds {\n" +
+            "    Mod+Space hotkey-overlay-title=\"Toggle App Launcher\" {\n" +
+            "        spawn-sh \"quickshell -c wisp-shell ipc call launcher toggle\"\n" +
+            "    }\n\n" +
             "    Mod+S hotkey-overlay-title=\"Toggle Wisp Shell Settings\" {\n" +
             "        spawn-sh \"quickshell -c wisp-shell ipc call settings toggle\"\n" +
             "    }\n\n" +

@@ -5,6 +5,7 @@ import qs.modules.polkit
 import qs.modules.lockscreen
 import qs.modules.bar
 import qs.modules.notifications
+import qs.modules.launcher
 
 ShellRoot {
     Wallpaper {}
@@ -12,4 +13,5 @@ ShellRoot {
     Polkit {}
     LockScreen {}
     Bar {}
+    Launcher {}
 }

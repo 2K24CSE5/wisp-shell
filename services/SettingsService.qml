@@ -54,6 +54,11 @@ Singleton {
         currentTab = tabIndex;
     }
 
+    function openNetwork(): void {
+        currentTab = 3;
+        open();
+    }
+
     function setIdleLockTimeout(minutes: int): void {
         Config.setIdleLockTimeout(minutes);
     }
@@ -105,6 +110,9 @@ Singleton {
         }
         function setTab(tabIndex: int): void {
             root.setTab(tabIndex);
+        }
+        function openNetwork(): void {
+            root.openNetwork();
         }
         function setIdleLockTimeout(minutes: int): void {
             root.setIdleLockTimeout(minutes);

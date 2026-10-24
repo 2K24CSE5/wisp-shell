@@ -16,14 +16,14 @@ layout {
 
     focus-ring {
         off
-        active-color "#85d6c0"
-        inactive-color "#3f4945"
+        active-color "#c7cc79"
+        inactive-color "#47473b"
     }
 
     border {
         off
-        active-color "#85d6c0"
-        inactive-color "#3f4945"
+        active-color "#c7cc79"
+        inactive-color "#47473b"
     }
 }
 
@@ -45,7 +45,7 @@ overview {
 
 recent-windows {
     highlight {
-        active-color "#85d6c0"
+        active-color "#c7cc79"
         urgent-color "#ffb4ab"
         corner-radius 12
     }
@@ -61,6 +61,10 @@ window-rule {
 }
 
 binds {
+    Mod+Space hotkey-overlay-title="Toggle App Launcher" {
+        spawn-sh "quickshell -c wisp-shell ipc call launcher toggle"
+    }
+
     Mod+S hotkey-overlay-title="Toggle Wisp Shell Settings" {
         spawn-sh "quickshell -c wisp-shell ipc call settings toggle"
     }

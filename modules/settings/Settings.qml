@@ -53,6 +53,11 @@ Scope {
                                 name: "Lockscreen",
                                 icon: "\ue897",
                                 tab: 2
+                            },
+                            {
+                                name: "Network",
+                                icon: "\ue63e",
+                                tab: 3
                             }
                         ]
                     }
@@ -71,6 +76,9 @@ Scope {
                                 Layout.fillWidth: true
                             }
                             SettingsLockscreen {
+                                Layout.fillWidth: true
+                            }
+                            SettingsNetwork {
                                 Layout.fillWidth: true
                             }
                         }
